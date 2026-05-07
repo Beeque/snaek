@@ -3,8 +3,9 @@ export class InputManager {
     this.left = false;
     this.right = false;
     this.steering = 0;
-    this.acceleration = 3.2;
-    this.drag = 3.6;
+    this.rapidAccel = 12;
+    this.smoothAccel = 8;
+    this.drag = 1.5;
     this.attachListeners();
   }
 
@@ -31,12 +32,10 @@ export class InputManager {
   update(dt) {
     const target = this.right ? 1 : this.left ? -1 : 0;
     if (target !== 0) {
-      this.steering += target * this.acceleration * dt;
-    } else if (this.steering !== 0) {
-      this.steering -= Math.sign(this.steering) * this.drag * dt;
-    }
-
-    if (Math.abs(this.steering) < 0.02) {
+      const isNewInput = (target > 0 && this.steering >= 0) || (target < 0 && this.steering <= 0);
+      const accel = isNewInput && Math.abs(this.steering) < 0.3 ? this.rapidAccel : this.smoothAccel;
+      this.steering += target * accel * dt;
+    } else {
       this.steering = 0;
     }
 

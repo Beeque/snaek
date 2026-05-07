@@ -36,9 +36,9 @@ export class Snake {
     this.head.x = Math.min(Math.max(this.head.x, margin), config.canvasWidth - margin);
     this.head.y = Math.min(Math.max(this.head.y, margin), config.canvasHeight - margin);
 
-    this.path.unshift({ x: this.head.x, y: this.head.y });
-    if (this.path.length > 600) {
-      this.path.length = 600;
+    this.addPathPoint({ x: this.head.x, y: this.head.y });
+    if (this.path.length > 800) {
+      this.path.length = 800;
     }
 
     this.updateSegments();
@@ -47,7 +47,6 @@ export class Snake {
   updateSegments() {
     const config = this.config;
     const spacing = config.segmentSpacing;
-    let currentDistance = 0;
     let pathIndex = 0;
     let traveled = 0;
 
@@ -82,5 +81,25 @@ export class Snake {
     const dx = next.x - current.x;
     const dy = next.y - current.y;
     return Math.hypot(dx, dy);
+  }
+
+  addPathPoint(point) {
+    const last = this.path[0];
+    const dx = point.x - last.x;
+    const dy = point.y - last.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance < 0.1) {
+      return;
+    }
+
+    const stepSize = 4;
+    const steps = Math.max(1, Math.ceil(distance / stepSize));
+    for (let i = 1; i <= steps; i += 1) {
+      const ratio = i / steps;
+      this.path.unshift({
+        x: last.x + dx * ratio,
+        y: last.y + dy * ratio
+      });
+    }
   }
 }
