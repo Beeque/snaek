@@ -10,6 +10,18 @@
   <div class="app-shell">
     <canvas id="game-canvas" aria-label="Snaek-pelialusta"></canvas>
     <div id="action-bar" class="action-bar" aria-label="Action bar"></div>
+    <div id="hud" class="hud">
+      <div class="stat-bar">
+        <div class="stat-bar__container">
+          <div id="health-bar" class="stat-bar__fill stat-bar__fill--health"></div>
+        </div>
+      </div>
+      <div class="stat-bar">
+        <div class="stat-bar__container">
+          <div id="energy-bar" class="stat-bar__fill stat-bar__fill--energy"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script type="module" src="./main.js"></script>

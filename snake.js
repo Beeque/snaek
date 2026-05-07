@@ -17,6 +17,14 @@ export class Snake {
     }));
   }
 
+  setSpeed(newSpeed) {
+    this.speed = newSpeed;
+  }
+
+  setSpeed(newSpeed) {
+    this.speed = newSpeed;
+  }
+
   update(dt, steer) {
     const config = this.config;
     const targetTurn = steer * config.maxTurnSpeed * (Math.PI / 180);

@@ -2,10 +2,11 @@ export class InputManager {
   constructor() {
     this.left = false;
     this.right = false;
+    this.up = false;
+    this.paused = false;
     this.steering = 0;
     this.rapidAccel = 12;
     this.smoothAccel = 8;
-    this.drag = 1.5;
     this.attachListeners();
   }
 
@@ -17,6 +18,12 @@ export class InputManager {
       if (event.key === 'ArrowRight') {
         this.right = true;
       }
+      if (event.key === 'ArrowUp') {
+        this.up = true;
+      }
+      if (event.key === ' ') {
+        this.paused = !this.paused;
+      }
     });
 
     window.addEventListener('keyup', (event) => {
@@ -25,6 +32,9 @@ export class InputManager {
       }
       if (event.key === 'ArrowRight') {
         this.right = false;
+      }
+      if (event.key === 'ArrowUp') {
+        this.up = false;
       }
     });
   }
@@ -44,5 +54,13 @@ export class InputManager {
 
   getSteer() {
     return this.steering;
+  }
+
+  isBoostActive() {
+    return this.up;
+  }
+
+  isPaused() {
+    return this.paused;
   }
 }
