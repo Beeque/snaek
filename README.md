@@ -1,2 +1,0 @@
-# snaek
-Amazing Snake
