@@ -117,9 +117,10 @@ export class Collectibles {
   }
 
   /**
+   * @param blackOrbScoreEnergy Mustan pallon pisteet = tämä energiamäärä (kun boost voimassa); muuten null.
    * @returns {{ scoreGained: number, energyGained: number }}
    */
-  updateAndCollect(dt, snake, boostCountsForScore) {
+  updateAndCollect(dt, snake, blackOrbScoreEnergy) {
     const config = this.config;
     this.time += dt;
 
@@ -158,8 +159,8 @@ export class Collectibles {
     if (dist < headR + r - config.pickupOverlapSlack) {
       if (orb.type === 'black') {
         snake.grow(config.growSegmentsPerBlack);
-        if (boostCountsForScore) {
-          scoreGained += config.scorePointsPerBlackBoost;
+        if (typeof blackOrbScoreEnergy === 'number' && blackOrbScoreEnergy > 0) {
+          scoreGained += Math.round(blackOrbScoreEnergy);
         }
       } else {
         energyGained += config.yellowEnergyRestore;

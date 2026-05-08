@@ -15,6 +15,8 @@ const particles = new ParticleSystem();
 const collectibles = new Collectibles(GAME_CONFIG);
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let score = 0;
+/** Boost pysyy vain jos nuolta pidetään ja energiaa tarpeeksi; uusi painallus kun energia loppui tai jäi alle kynnyksen. */
+let boostEngaged = false;
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -30,21 +32,35 @@ function animate(timestamp) {
   input.update(delta);
   
   if (!input.isPaused()) {
+    const maxE = GAME_CONFIG.maxEnergy;
+    const energyFrac = currentEnergy / maxE;
+    const energyEnoughForBoost = currentEnergy > 0 && energyFrac >= GAME_CONFIG.boostMinEnergyFraction;
+
+    if (!input.isBoostKeyHeld()) {
+      boostEngaged = false;
+    } else if (!energyEnoughForBoost) {
+      boostEngaged = false;
+    } else if (input.isBoostPressedEdge()) {
+      boostEngaged = true;
+    }
+
+    const boostActive = boostEngaged && input.isBoostKeyHeld() && energyEnoughForBoost && currentEnergy > 0;
+
     let effectiveSpeed = GAME_CONFIG.baseSpeed;
-    if (input.isBoostActive() && currentEnergy > 0) {
+    if (boostActive) {
       effectiveSpeed *= GAME_CONFIG.boostMultiplier;
       currentEnergy -= GAME_CONFIG.boostEnergyDrain * delta;
       currentEnergy = Math.max(0, currentEnergy);
     } else {
       currentEnergy += GAME_CONFIG.energyRegenRate * delta;
-      currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy);
+      currentEnergy = Math.min(maxE, currentEnergy);
     }
     
     snake.setSpeed(effectiveSpeed);
     snake.update(delta, input.getSteer());
 
-    const boostingForScore = input.isBoostActive() && currentEnergy > 0;
-    const pickup = collectibles.updateAndCollect(delta, snake, boostingForScore);
+    const blackOrbScoreEnergy = boostActive ? currentEnergy : null;
+    const pickup = collectibles.updateAndCollect(delta, snake, blackOrbScoreEnergy);
     score += pickup.scoreGained;
     if (pickup.energyGained > 0) {
       currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
@@ -54,7 +70,7 @@ function animate(timestamp) {
 
     snake.segments.forEach((segment, index) => {
       particles.emitFromSnake(segment, GAME_CONFIG);
-      if (input.isBoostActive()) {
+      if (boostActive) {
         // Kultaiset partikkelit emitoidaan enimmäkseen madon keskiosasta/hännästä
         const middlePoint = Math.floor(snake.segments.length / 2);
         if (index >= middlePoint) {

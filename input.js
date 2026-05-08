@@ -7,6 +7,8 @@ export class InputManager {
     this.steering = 0;
     this.rapidAccel = 22;
     this.smoothAccel = 16;
+    this.wasUpLastFrame = false;
+    this.boostPressedEdge = false;
     this.attachListeners();
   }
 
@@ -40,24 +42,32 @@ export class InputManager {
   }
 
   update(dt) {
+    this.boostPressedEdge = this.up && !this.wasUpLastFrame;
+
     const target = this.right ? 1 : this.left ? -1 : 0;
     if (target !== 0) {
       const isNewInput = (target > 0 && this.steering >= 0) || (target < 0 && this.steering <= 0);
-    const accel = isNewInput && Math.abs(this.steering) < 0.35 ? this.rapidAccel : this.smoothAccel;
+      const accel = isNewInput && Math.abs(this.steering) < 0.35 ? this.rapidAccel : this.smoothAccel;
       this.steering += target * accel * dt;
     } else {
       this.steering = 0;
     }
 
     this.steering = Math.max(-1, Math.min(1, this.steering));
+    this.wasUpLastFrame = this.up;
   }
 
   getSteer() {
     return this.steering;
   }
 
-  isBoostActive() {
+  /** Nuoli ylös on pohjassa (raaka näppäin). */
+  isBoostKeyHeld() {
     return this.up;
+  }
+
+  isBoostPressedEdge() {
+    return this.boostPressedEdge;
   }
 
   isPaused() {
