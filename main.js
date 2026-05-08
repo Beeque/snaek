@@ -22,8 +22,6 @@ const floatingTexts = new FloatingTexts();
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
-/** Boost pysyy vain jos nuolta pidetään ja energiaa tarpeeksi; uusi painallus kun energia loppui tai jäi alle kynnyksen. */
-let boostEngaged = false;
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -42,21 +40,15 @@ function animate(timestamp) {
     const maxE = GAME_CONFIG.maxEnergy;
     const energyFrac = currentEnergy / maxE;
     const energyEnoughForBoost = currentEnergy > 0 && energyFrac >= GAME_CONFIG.boostMinEnergyFraction;
-
-    if (!input.isBoostKeyHeld()) {
-      boostEngaged = false;
-    } else if (!energyEnoughForBoost) {
-      boostEngaged = false;
-    } else if (input.isBoostPressedEdge()) {
-      boostEngaged = true;
-    }
-
-    const boostActive = boostEngaged && input.isBoostKeyHeld() && energyEnoughForBoost && currentEnergy > 0;
+    const requestedBoost = input.getBoostAmount();
+    const boostAmount = energyEnoughForBoost ? requestedBoost : 0;
+    const boostActive = boostAmount > 0 && currentEnergy > 0;
 
     let effectiveSpeed = GAME_CONFIG.baseSpeed;
     if (boostActive) {
-      effectiveSpeed *= GAME_CONFIG.boostMultiplier;
-      currentEnergy -= GAME_CONFIG.boostEnergyDrain * delta;
+      const dynBoostMul = 1 + (GAME_CONFIG.boostMultiplier - 1) * boostAmount;
+      effectiveSpeed *= dynBoostMul;
+      currentEnergy -= GAME_CONFIG.boostEnergyDrain * boostAmount * delta;
       currentEnergy = Math.max(0, currentEnergy);
     } else {
       currentEnergy += GAME_CONFIG.energyRegenRate * delta;
@@ -137,5 +129,15 @@ function animate(timestamp) {
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', () => {
   resizeCanvas();
+  if (input.isMotionAvailable()) {
+    const activate = () => {
+      input.enableMotionControls().finally(() => {
+        window.removeEventListener('click', activate);
+        window.removeEventListener('touchstart', activate);
+      });
+    };
+    window.addEventListener('click', activate, { once: true });
+    window.addEventListener('touchstart', activate, { once: true });
+  }
   requestAnimationFrame(animate);
 });

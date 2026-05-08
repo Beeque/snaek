@@ -210,6 +210,7 @@ export class AsteroidField {
     const w = c.canvasWidth;
     const h = c.canvasHeight;
     const shades = ['#030303', '#060606', '#0a0a0a', '#0f0f0f'];
+    const emberShades = ['#ff3a1a', '#ff5b1f', '#ff7a1a', '#ff9a22', '#ff2b16'];
 
     while (this._debrisCarry >= 1) {
       this._debrisCarry -= 1;
@@ -236,12 +237,30 @@ export class AsteroidField {
         vy = Math.sin(a) * randRange(12, 34);
       }
 
-      const life = randRange(c.asteroidDebrisLifeMin, c.asteroidDebrisLifeMax);
-      const radius = randRange(c.asteroidDebrisRadiusMin, c.asteroidDebrisRadiusMax);
-      const color = shades[Math.floor(Math.random() * shades.length)];
+      const isEmber = Math.random() < 0.42;
+      const life = isEmber
+        ? randRange(c.asteroidDebrisLifeMin * 0.8, c.asteroidDebrisLifeMax * 0.92)
+        : randRange(c.asteroidDebrisLifeMin, c.asteroidDebrisLifeMax);
+      const radius = isEmber
+        ? randRange(c.asteroidDebrisRadiusMin * 0.75, c.asteroidDebrisRadiusMax * 0.95)
+        : randRange(c.asteroidDebrisRadiusMin, c.asteroidDebrisRadiusMax);
+      const color = isEmber
+        ? emberShades[Math.floor(Math.random() * emberShades.length)]
+        : shades[Math.floor(Math.random() * shades.length)];
       const px = wrapCanvasCoord(wx, w);
       const py = wrapCanvasCoord(wy, h);
-      particleSystem.emit(px, py, vx, vy, life, radius, color, c.asteroidDebrisGravity, 'asteroidDebris');
+      particleSystem.emit(
+        px,
+        py,
+        vx,
+        vy,
+        life,
+        radius,
+        color,
+        c.asteroidDebrisGravity,
+        isEmber ? 'asteroidSpark' : 'asteroidDebris',
+        isEmber ? { speed: randRange(8.5, 17), phase: Math.random() * Math.PI * 2 } : null
+      );
     }
   }
 

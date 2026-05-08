@@ -7,7 +7,7 @@ export class ParticleSystem {
     this._pickupParticleCarry = 0;
   }
 
-  emit(x, y, vx, vy, life, radius, color = '#000000', grav = null, kind = null) {
+  emit(x, y, vx, vy, life, radius, color = '#000000', grav = null, kind = null, sparkle = null) {
     this.particles.push({
       x,
       y,
@@ -18,7 +18,8 @@ export class ParticleSystem {
       radius,
       color,
       grav,
-      kind
+      kind,
+      sparkle
     });
   }
 
@@ -107,17 +108,29 @@ export class ParticleSystem {
         finalAlpha = alpha * 0.88;
       } else if (p.kind === 'asteroidDebris') {
         finalAlpha = alpha * 0.5;
+      } else if (p.kind === 'asteroidSpark') {
+        const sp = p.sparkle?.speed ?? 10;
+        const ph = p.sparkle?.phase ?? 0;
+        const twinkleFactor = 0.28 + 0.72 * (0.5 + 0.5 * Math.sin(Date.now() / 1000 * sp + ph));
+        finalAlpha = alpha * 0.92 * twinkleFactor;
       } else if (p.color === '#FFD700') {
         // Vilkkuminen sin-funktion avulla
         const twinkleFactor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 100));
         finalAlpha = alpha * 0.8 * twinkleFactor;
       }
       ctx.globalAlpha = finalAlpha;
+      if (p.kind === 'asteroidSpark') {
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+      } else {
+        ctx.shadowBlur = 0;
+      }
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
       ctx.fill();
     });
+    ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
   }
 }
