@@ -3,17 +3,15 @@ import { InputManager } from './input.js';
 import { Snake } from './snake.js';
 import { ParticleSystem } from './particles.js';
 import { renderFrame } from './render.js';
-import { createActionBar, updateHealthBar, updateEnergyBar } from './ui.js';
+import { updateHealthBar, updateEnergyBar } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
-const actionBar = document.getElementById('action-bar');
 
 const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
 let currentEnergy = GAME_CONFIG.maxEnergy;
-createActionBar(actionBar, GAME_CONFIG.actionButtons);
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;

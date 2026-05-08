@@ -17,9 +17,5 @@ export const GAME_CONFIG = {
   turnDrag: 3,
   waveAmplitude: 15,
   waveFrequency: 1.2,
-  maxEnergy: 100,
-  actionButtons: Array.from({ length: 10 }, (_, index) => ({
-    shortcut: index < 9 ? String(index + 1) : '0',
-    description: `Placeholder-painike ${index < 9 ? String(index + 1) : '0'}`
-  }))
+  maxEnergy: 100
 };
