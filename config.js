@@ -85,8 +85,8 @@ export const GAME_CONFIG = {
   /** Ympyröiden määrä per asteroidi (ketjutetut möykyt). */
   asteroidVertMin: 6,
   asteroidVertMax: 9,
-  asteroidRadiusMin: 38,
-  asteroidRadiusMax: 72,
+  asteroidRadiusMin: 46,
+  asteroidRadiusMax: 88,
   asteroidLifeMin: 38,
   asteroidLifeMax: 72,
   asteroidDamage: 11,
