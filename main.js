@@ -69,8 +69,8 @@ function animate(timestamp) {
     if (pickup.healthGained > 0) {
       currentHealth = Math.min(GAME_CONFIG.maxHealth, currentHealth + pickup.healthGained);
     }
-    if (pickup.ateBlack && pickup.scoreGained > 0) {
-      floatingTexts.add(snake.head.x, snake.head.y - 28, `+${pickup.scoreGained}`, '#0a0a0a', 0.9);
+    if (pickup.ateBlack) {
+      floatingTexts.add(snake.head.x, snake.head.y - 28, `+${Math.max(0, pickup.scoreGained)}`, '#0a0a0a', 0.9);
     }
     if (pickup.ateYellow && pickup.energyGained > 0) {
       floatingTexts.add(snake.head.x, snake.head.y - 24, `+${Math.round(pickup.energyGained)}`, '#6b4e0a', 0.85);
