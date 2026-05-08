@@ -16,21 +16,34 @@ function randRange(a, b) {
   return a + Math.random() * (b - a);
 }
 
+function randGrayRgb(minV, maxV) {
+  const v = randRange(minV, maxV);
+  const g = v + randRange(-4, 6);
+  const b = v + randRange(-2, 10);
+  return `rgb(${Math.round(v)},${Math.round(g)},${Math.round(b)})`;
+}
+
+/**
+ * Limittäiset ympyrät niin että keskipisteet ovat ulommassa kaaressa (ketju),
+ * ei sisäkkäin — muuten kaikki sulautuu yhdeksi mustaksi möykkyksi.
+ */
 function makeRockBlobs(n, rMin, rMax) {
   const blobs = [];
   let hitRadius = 0;
-  const coreR = randRange(rMin * 0.4, rMax * 0.5);
-  blobs.push({ dx: 0, dy: 0, r: coreR });
+  const coreR = randRange(rMin * 0.22, rMax * 0.34);
+  blobs.push({ dx: 0, dy: 0, r: coreR, fill: randGrayRgb(14, 26) });
   hitRadius = coreR;
 
   for (let i = 1; i < n; i += 1) {
     const pick = blobs[Math.floor(Math.random() * blobs.length)];
+    const r = randRange(rMin * 0.2, rMax * 0.4);
+    /** Osittainen limitys: ~25–45 % halkaisijasta — näkyvät erilliset möykyt. */
+    const overlap = randRange(0.25, 0.45) * Math.min(pick.r, r);
+    const dist = pick.r + r - overlap;
     const ang = Math.random() * Math.PI * 2;
-    const dist = randRange(pick.r * 0.22, pick.r * 0.95);
     const dx = pick.dx + Math.cos(ang) * dist;
     const dy = pick.dy + Math.sin(ang) * dist;
-    const r = randRange(rMin * 0.18, rMax * 0.44);
-    blobs.push({ dx, dy, r });
+    blobs.push({ dx, dy, r, fill: randGrayRgb(10, 28) });
     const reach = Math.hypot(dx, dy) + r;
     if (reach > hitRadius) hitRadius = reach;
   }
@@ -163,8 +176,6 @@ export class AsteroidField {
     const c = this.config;
     const w = c.canvasWidth;
     const h = c.canvasHeight;
-    const fill = c.asteroidFillColor;
-    const stroke = c.asteroidStrokeColor;
 
     for (let r = 0; r < this.rocks.length; r += 1) {
       const rock = this.rocks[r];
@@ -181,16 +192,33 @@ export class AsteroidField {
           ctx.save();
           ctx.translate(cx, cy);
           ctx.rotate(rock.angle);
-          ctx.fillStyle = fill;
-          ctx.strokeStyle = stroke;
-          ctx.lineWidth = 2;
-          for (let i = 0; i < rock.blobs.length; i += 1) {
-            const b = rock.blobs[i];
+          const sorted = rock.blobs.slice().sort((a, z) => z.r - a.r);
+          let maxReach = 0;
+          for (let i = 0; i < sorted.length; i += 1) {
+            const b = sorted[i];
+            maxReach = Math.max(maxReach, Math.hypot(b.dx, b.dy) + b.r);
+          }
+          for (let i = 0; i < sorted.length; i += 1) {
+            const b = sorted[i];
             ctx.beginPath();
             ctx.arc(b.dx, b.dy, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = b.fill;
             ctx.fill();
+          }
+          ctx.strokeStyle = c.asteroidStrokeColor;
+          ctx.lineWidth = 1.25;
+          ctx.globalAlpha = 0.55;
+          for (let i = 0; i < sorted.length; i += 1) {
+            const b = sorted[i];
+            const reach = Math.hypot(b.dx, b.dy) + b.r;
+            if (reach < maxReach * 0.78) {
+              continue;
+            }
+            ctx.beginPath();
+            ctx.arc(b.dx, b.dy, b.r, 0, Math.PI * 2);
             ctx.stroke();
           }
+          ctx.globalAlpha = 1;
           ctx.restore();
         }
       }
