@@ -87,25 +87,32 @@ export class Collectibles {
     return { x: w * 0.5, y: h * 0.5 };
   }
 
+  /** Pieni vaaka- ja pystyvärähdys (eri taajuudet → luonnollinen leijunta). */
+  getOrbFloatOffset(orb) {
+    const c = this.config;
+    const t = this.time;
+    const dy = Math.sin(t * c.orbFloatSpeedPrimary + orb.phase) * c.orbFloatAmplitudeY;
+    const dx = Math.cos(t * c.orbFloatSpeedSecondary + orb.phase * 1.71) * c.orbFloatAmplitudeX;
+    return { dx, dy };
+  }
+
   getOrbDrawPosition(orb) {
-    const config = this.config;
-    const w = config.canvasWidth;
-    const h = config.canvasHeight;
-    const bob = Math.sin(this.time * config.orbFloatSpeed + orb.phase) * config.orbFloatAmplitude;
+    const w = this.config.canvasWidth;
+    const h = this.config.canvasHeight;
+    const { dx, dy } = this.getOrbFloatOffset(orb);
     return {
-      x: wrapCanvasCoord(orb.baseX, w),
-      y: wrapCanvasCoord(orb.baseY + bob, h)
+      x: wrapCanvasCoord(orb.baseX + dx, w),
+      y: wrapCanvasCoord(orb.baseY + dy, h)
     };
   }
 
   getOrbCollisionXY(orb) {
-    const config = this.config;
-    const w = config.canvasWidth;
-    const h = config.canvasHeight;
-    const bob = Math.sin(this.time * config.orbFloatSpeed + orb.phase) * config.orbFloatAmplitude;
+    const w = this.config.canvasWidth;
+    const h = this.config.canvasHeight;
+    const { dx, dy } = this.getOrbFloatOffset(orb);
     return {
-      x: wrapCanvasCoord(orb.baseX, w),
-      y: wrapCanvasCoord(orb.baseY + bob, h)
+      x: wrapCanvasCoord(orb.baseX + dx, w),
+      y: wrapCanvasCoord(orb.baseY + dy, h)
     };
   }
 

@@ -50,6 +50,8 @@ function animate(timestamp) {
       currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
     }
 
+    particles.emitFromPickupOrbs(collectibles, GAME_CONFIG, delta);
+
     snake.segments.forEach((segment, index) => {
       particles.emitFromSnake(segment, GAME_CONFIG);
       if (input.isBoostActive()) {

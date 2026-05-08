@@ -5,7 +5,7 @@ export class ParticleSystem {
     this.particles = [];
   }
 
-  emit(x, y, vx, vy, life, radius, color = '#000000') {
+  emit(x, y, vx, vy, life, radius, color = '#000000', grav = null) {
     this.particles.push({
       x,
       y,
@@ -14,7 +14,8 @@ export class ParticleSystem {
       life,
       maxLife: life,
       radius,
-      color
+      color,
+      grav
     });
   }
 
@@ -29,6 +30,31 @@ export class ParticleSystem {
       const x = wrapCanvasCoord(segment.x, config.canvasWidth);
       const y = wrapCanvasCoord(segment.y, config.canvasHeight);
       this.emit(x, y, vx, vy, life, radius);
+    }
+  }
+
+  emitFromPickupOrbs(collectibles, config, dt) {
+    const orbs = collectibles.getActiveOrbs();
+    for (let i = 0; i < orbs.length; i += 1) {
+      const orb = orbs[i];
+      const rate = orb.type === 'yellow' ? config.orbParticleRateYellow : config.orbParticleRateBlack;
+      if (Math.random() >= rate * dt) {
+        continue;
+      }
+      const { x, y } = collectibles.getOrbCollisionXY(orb);
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 8 + Math.random() * 18;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed - (orb.type === 'yellow' ? 12 : 6);
+      const life = 0.35 + Math.random() * 0.45;
+      if (orb.type === 'yellow') {
+        const r = config.orbParticleRadiusYellow + Math.random() * 0.8;
+        this.emit(x, y, vx, vy, life, r, '#FFD700', 22);
+      } else {
+        const r = config.orbParticleRadiusBlack + Math.random() * 0.6;
+        const shade = Math.random() > 0.5 ? '#353535' : '#252525';
+        this.emit(x, y, vx * 0.85, vy * 0.85, life, r, shade, 28);
+      }
     }
   }
 
@@ -52,7 +78,7 @@ export class ParticleSystem {
       p.life -= dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
-      p.vy += 50 * dt;
+      p.vy += (p.grav ?? 50) * dt;
       return p.life > 0;
     });
   }
