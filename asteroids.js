@@ -16,19 +16,26 @@ function randRange(a, b) {
   return a + Math.random() * (b - a);
 }
 
-function makeRockVertices(count, rLo, rHi) {
-  const verts = [];
-  for (let i = 0; i < count; i += 1) {
-    const ang = (i / count) * Math.PI * 2 + randRange(-0.09, 0.09);
-    const rr = randRange(rLo, rHi);
-    verts.push({ x: Math.cos(ang) * rr, y: Math.sin(ang) * rr });
+function makeRockBlobs(n, rMin, rMax) {
+  const blobs = [];
+  let hitRadius = 0;
+  const coreR = randRange(rMin * 0.4, rMax * 0.5);
+  blobs.push({ dx: 0, dy: 0, r: coreR });
+  hitRadius = coreR;
+
+  for (let i = 1; i < n; i += 1) {
+    const pick = blobs[Math.floor(Math.random() * blobs.length)];
+    const ang = Math.random() * Math.PI * 2;
+    const dist = randRange(pick.r * 0.22, pick.r * 0.95);
+    const dx = pick.dx + Math.cos(ang) * dist;
+    const dy = pick.dy + Math.sin(ang) * dist;
+    const r = randRange(rMin * 0.18, rMax * 0.44);
+    blobs.push({ dx, dy, r });
+    const reach = Math.hypot(dx, dy) + r;
+    if (reach > hitRadius) hitRadius = reach;
   }
-  let maxR = 0;
-  for (let i = 0; i < verts.length; i += 1) {
-    const d = Math.hypot(verts[i].x, verts[i].y);
-    if (d > maxR) maxR = d;
-  }
-  return { verts, hitRadius: maxR * 0.92 };
+
+  return { blobs, hitRadius: hitRadius * 0.92 };
 }
 
 function intersectsCanvasViewport(cx, cy, pad, cw, ch) {
@@ -82,11 +89,7 @@ export class AsteroidField {
     }
 
     const n = Math.round(randRange(c.asteroidVertMin, c.asteroidVertMax));
-    const { verts, hitRadius } = makeRockVertices(
-      n,
-      c.asteroidRadiusMin,
-      c.asteroidRadiusMax
-    );
+    const { blobs, hitRadius } = makeRockBlobs(n, c.asteroidRadiusMin, c.asteroidRadiusMax);
 
     this.rocks.push({
       x,
@@ -95,7 +98,7 @@ export class AsteroidField {
       vy,
       angle: Math.random() * Math.PI * 2,
       spin: randRange(-c.asteroidSpinMax, c.asteroidSpinMax),
-      verts,
+      blobs,
       hitRadius,
       life: randRange(c.asteroidLifeMin, c.asteroidLifeMax)
     });
@@ -178,18 +181,16 @@ export class AsteroidField {
           ctx.save();
           ctx.translate(cx, cy);
           ctx.rotate(rock.angle);
-          ctx.beginPath();
-          const v0 = rock.verts[0];
-          ctx.moveTo(v0.x, v0.y);
-          for (let i = 1; i < rock.verts.length; i += 1) {
-            ctx.lineTo(rock.verts[i].x, rock.verts[i].y);
-          }
-          ctx.closePath();
           ctx.fillStyle = fill;
-          ctx.fill();
           ctx.strokeStyle = stroke;
           ctx.lineWidth = 2;
-          ctx.stroke();
+          for (let i = 0; i < rock.blobs.length; i += 1) {
+            const b = rock.blobs[i];
+            ctx.beginPath();
+            ctx.arc(b.dx, b.dy, b.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
           ctx.restore();
         }
       }

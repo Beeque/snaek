@@ -82,6 +82,7 @@ export const GAME_CONFIG = {
   asteroidDriftSpeedMin: 22,
   asteroidDriftSpeedMax: 48,
   asteroidSpinMax: 0.65,
+  /** Ympyröiden määrä per asteroidi (limittäiset möykyt). */
   asteroidVertMin: 7,
   asteroidVertMax: 11,
   asteroidRadiusMin: 38,
