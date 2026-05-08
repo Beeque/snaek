@@ -25,7 +25,7 @@ export function drawCollectibles(ctx, config, collectibles) {
   if (!collectibles) {
     return;
   }
-  collectibles.orbs.forEach((orb) => {
+  collectibles.getActiveOrbs().forEach((orb) => {
     const pos = collectibles.getOrbDrawPosition(orb);
     const r = collectibles.orbRadius(orb);
     if (orb.type === 'yellow') {

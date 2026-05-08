@@ -5,8 +5,8 @@ export class InputManager {
     this.up = false;
     this.paused = false;
     this.steering = 0;
-    this.rapidAccel = 12;
-    this.smoothAccel = 8;
+    this.rapidAccel = 22;
+    this.smoothAccel = 16;
     this.attachListeners();
   }
 
@@ -43,7 +43,7 @@ export class InputManager {
     const target = this.right ? 1 : this.left ? -1 : 0;
     if (target !== 0) {
       const isNewInput = (target > 0 && this.steering >= 0) || (target < 0 && this.steering <= 0);
-      const accel = isNewInput && Math.abs(this.steering) < 0.3 ? this.rapidAccel : this.smoothAccel;
+    const accel = isNewInput && Math.abs(this.steering) < 0.35 ? this.rapidAccel : this.smoothAccel;
       this.steering += target * accel * dt;
     } else {
       this.steering = 0;

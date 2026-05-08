@@ -12,7 +12,7 @@ const ctx = canvas.getContext('2d');
 const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
-const collectibles = new Collectibles(GAME_CONFIG, snake);
+const collectibles = new Collectibles(GAME_CONFIG);
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let score = 0;
 
