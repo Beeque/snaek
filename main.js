@@ -5,6 +5,7 @@ import { ParticleSystem } from './particles.js';
 import { renderFrame } from './render.js';
 import { Collectibles } from './collectibles.js';
 import { HazardWaveSystem } from './hazards.js';
+import { FloatingTexts } from './floatingTexts.js';
 import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -15,6 +16,7 @@ const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
 const collectibles = new Collectibles(GAME_CONFIG);
 const hazards = new HazardWaveSystem(GAME_CONFIG);
+const floatingTexts = new FloatingTexts();
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
@@ -68,9 +70,21 @@ function animate(timestamp) {
     if (pickup.energyGained > 0) {
       currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
     }
+    if (pickup.ateBlack && pickup.scoreGained > 0) {
+      floatingTexts.add(snake.head.x, snake.head.y - 28, `+${pickup.scoreGained}`, '#0a0a0a', 0.9);
+    }
+    if (pickup.ateYellow && pickup.energyGained > 0) {
+      floatingTexts.add(snake.head.x, snake.head.y - 24, `+${Math.round(pickup.energyGained)}`, '#6b4e0a', 0.85);
+    }
 
-    const hazardDamage = hazards.update(delta, snake);
-    currentHealth = Math.max(0, currentHealth - hazardDamage);
+    const hz = hazards.update(delta, snake);
+    currentHealth = Math.max(0, currentHealth - hz.damage);
+    if (hz.wavePopup) {
+      floatingTexts.add(snake.head.x, snake.head.y - 32, `-${GAME_CONFIG.hazardWaveDamage}`, '#b01010', 1);
+    }
+    if (hz.emberPopup) {
+      floatingTexts.add(snake.head.x, snake.head.y - 20, `-${GAME_CONFIG.hazardEmberDamage}`, '#c42828', 0.75);
+    }
 
     particles.emitFromPickupOrbs(collectibles, GAME_CONFIG, delta);
 
@@ -90,9 +104,10 @@ function animate(timestamp) {
     });
   }
   
+  floatingTexts.update(delta);
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards);
+  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, floatingTexts);
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
   const healthPercent = (currentHealth / GAME_CONFIG.maxHealth) * 100;

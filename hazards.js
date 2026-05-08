@@ -25,7 +25,7 @@ function randRange(a, b) {
 }
 
 /**
- * Reunavarjoitus → pyyhkäisevä rintama → afterburn-partikkelit.
+ * Varoitus → partikkelirintama (ei suorakaiteita) → trail seuraa hieman hitaammin.
  */
 export class HazardWaveSystem {
   constructor(config) {
@@ -34,11 +34,12 @@ export class HazardWaveSystem {
     this.idleTimer = randRange(config.hazardIdleMin, config.hazardIdleMax);
     this.warningTimer = 0;
     this.direction = 'east';
-    /** Johtava reunan koordinaatti (x pystyaalloille, y vaaka-aalloille). */
     this.leadingEdge = 0;
-    this.embers = [];
+    /** Kaikki tulipartikkelit: kind 'crest' vain visual, 'trail' afterburn + törmäys -1 */
+    this.fireParticles = [];
     this.warningSparks = [];
-    this.invuln = 0;
+    this.waveHitCd = 0;
+    this.emberHitCd = 0;
   }
 
   resetIdle() {
@@ -46,7 +47,7 @@ export class HazardWaveSystem {
     this.phase = 'idle';
     this.idleTimer = randRange(c.hazardIdleMin, c.hazardIdleMax);
     this.warningSparks.length = 0;
-    this.embers.length = 0;
+    this.fireParticles.length = 0;
   }
 
   pickDirection() {
@@ -94,7 +95,9 @@ export class HazardWaveSystem {
     const h = c.canvasHeight;
     const t = c.hazardWaveThickness;
     this.phase = 'sweep';
-    this.invuln = 0;
+    this.waveHitCd = 0;
+    this.emberHitCd = 0;
+    this.fireParticles.length = 0;
     if (this.direction === 'east') {
       this.leadingEdge = -t;
     } else if (this.direction === 'west') {
@@ -106,43 +109,109 @@ export class HazardWaveSystem {
     }
   }
 
-  spawnEmbers() {
+  pushCrestParticle(x, y, vx, vy) {
+    const c = this.config;
+    this.fireParticles.push({
+      x,
+      y,
+      vx,
+      vy,
+      life: randRange(c.hazardCrestLifeMin, c.hazardCrestLifeMax),
+      maxLife: 0,
+      r: randRange(c.hazardCrestRadiusMin, c.hazardCrestRadiusMax),
+      hot: Math.random() > 0.4,
+      kind: 'crest'
+    });
+    const p = this.fireParticles[this.fireParticles.length - 1];
+    p.maxLife = p.life;
+  }
+
+  pushTrailParticle(x, y, vx, vy) {
+    const c = this.config;
+    this.fireParticles.push({
+      x,
+      y,
+      vx,
+      vy,
+      life: randRange(c.hazardTrailLifeMin, c.hazardTrailLifeMax),
+      maxLife: 0,
+      r: randRange(c.hazardTrailRadiusMin, c.hazardTrailRadiusMax),
+      hot: Math.random() > 0.5,
+      kind: 'trail'
+    });
+    const p = this.fireParticles[this.fireParticles.length - 1];
+    p.maxLife = p.life;
+  }
+
+  spawnSweepParticles(dt) {
     const c = this.config;
     const w = c.canvasWidth;
     const h = c.canvasHeight;
-    const n = c.hazardEmberCount;
-    this.embers.length = 0;
-    for (let i = 0; i < n; i += 1) {
-      const x = Math.random() * w;
-      const y = Math.random() * h;
+    const t = c.hazardWaveThickness;
+    const lead = this.leadingEdge;
+    const sp = c.hazardSweepSpeed;
+    const ratio = c.hazardTrailSpeedRatio;
+
+    const nCrest = Math.max(0, Math.round(c.hazardCrestSpawnRate * dt));
+    const nTrail = Math.max(0, Math.round(c.hazardTrailSpawnRate * dt));
+
+    for (let i = 0; i < nCrest; i += 1) {
+      let x = 0;
+      let y = 0;
       let vx = 0;
       let vy = 0;
-      const base = c.hazardEmberDriftSpeed;
       if (this.direction === 'east') {
-        vx = -randRange(base * 0.4, base * 1.4);
-        vy = randRange(-55, 55);
+        x = lead + randRange(0, t);
+        y = randRange(0, h);
+        vx = sp + randRange(-35, 35);
+        vy = randRange(-70, 70);
       } else if (this.direction === 'west') {
-        vx = randRange(base * 0.4, base * 1.4);
-        vy = randRange(-55, 55);
+        x = lead - randRange(0, t);
+        y = randRange(0, h);
+        vx = -sp + randRange(-35, 35);
+        vy = randRange(-70, 70);
       } else if (this.direction === 'south') {
-        vy = -randRange(base * 0.4, base * 1.4);
-        vx = randRange(-55, 55);
+        x = randRange(0, w);
+        y = lead + randRange(0, t);
+        vx = randRange(-70, 70);
+        vy = sp + randRange(-35, 35);
       } else {
-        vy = randRange(base * 0.4, base * 1.4);
-        vx = randRange(-55, 55);
+        x = randRange(0, w);
+        y = lead - randRange(0, t);
+        vx = randRange(-70, 70);
+        vy = -sp + randRange(-35, 35);
       }
-      const life = randRange(c.hazardEmberLifeMin, c.hazardEmberLifeMax);
-      const hot = Math.random() > 0.55;
-      this.embers.push({
-        x,
-        y,
-        vx,
-        vy,
-        life,
-        maxLife: life,
-        r: randRange(c.hazardEmberRadiusMin, c.hazardEmberRadiusMax),
-        hot
-      });
+      this.pushCrestParticle(x, y, vx, vy);
+    }
+
+    for (let j = 0; j < nTrail; j += 1) {
+      let x = 0;
+      let y = 0;
+      let vx = 0;
+      let vy = 0;
+      const back = t * randRange(1.2, 2.8);
+      if (this.direction === 'east') {
+        x = lead - back + randRange(0, t * 0.6);
+        y = randRange(0, h);
+        vx = sp * ratio + randRange(-28, 28);
+        vy = randRange(-65, 65);
+      } else if (this.direction === 'west') {
+        x = lead + back - randRange(0, t * 0.6);
+        y = randRange(0, h);
+        vx = -sp * ratio + randRange(-28, 28);
+        vy = randRange(-65, 65);
+      } else if (this.direction === 'south') {
+        x = randRange(0, w);
+        y = lead - back + randRange(0, t * 0.6);
+        vx = randRange(-65, 65);
+        vy = sp * ratio + randRange(-28, 28);
+      } else {
+        x = randRange(0, w);
+        y = lead + back - randRange(0, t * 0.6);
+        vx = randRange(-65, 65);
+        vy = -sp * ratio + randRange(-28, 28);
+      }
+      this.pushTrailParticle(x, y, vx, vy);
     }
   }
 
@@ -190,72 +259,88 @@ export class HazardWaveSystem {
     }
   }
 
-  applyWaveDamage(snake, damageAcc) {
+  applyWaveDamage(snake) {
     const c = this.config;
     const { rx, ry, rw, rh } = this.sweepBandRect();
-    let add = 0;
-    if (this.invuln > 0) {
-      return damageAcc;
+    if (this.waveHitCd > 0) {
+      return { dmg: 0, popup: false };
     }
     for (let i = 0; i < snake.segments.length; i += 1) {
       const seg = snake.segments[i];
       const sx = wrapCanvasCoord(seg.x, c.canvasWidth);
       const sy = wrapCanvasCoord(seg.y, c.canvasHeight);
       if (circleRectOverlap(sx, sy, seg.radius, rx, ry, rw, rh)) {
-        add += c.hazardWaveDamage;
-        break;
+        this.waveHitCd = c.hazardWaveHitCooldown;
+        return { dmg: c.hazardWaveDamage, popup: true };
       }
     }
-    if (add > 0) {
-      this.invuln = c.hazardDamageCooldown;
-    }
-    return damageAcc + add;
+    return { dmg: 0, popup: false };
   }
 
-  applyEmberDamage(snake, damageAcc) {
+  applyTrailDamage(snake) {
     const c = this.config;
     const w = c.canvasWidth;
     const h = c.canvasHeight;
-    if (this.invuln > 0 || this.embers.length === 0) {
-      return damageAcc;
+    if (this.emberHitCd > 0) {
+      return { dmg: 0, popup: false };
     }
-    let hit = false;
-    for (let e = 0; e < this.embers.length; e += 1) {
-      const em = this.embers[e];
-      if (em.life <= 0) continue;
+    for (let e = 0; e < this.fireParticles.length; e += 1) {
+      const em = this.fireParticles[e];
+      if (em.life <= 0 || em.kind !== 'trail') continue;
       for (let s = 0; s < snake.segments.length; s += 1) {
         const seg = snake.segments[s];
         const sx = wrapCanvasCoord(seg.x, w);
         const sy = wrapCanvasCoord(seg.y, h);
         const d = torusDistance(sx, sy, em.x, em.y, w, h);
         if (d < seg.radius + em.r - 1) {
-          hit = true;
-          break;
+          this.emberHitCd = c.hazardEmberHitCooldown;
+          return { dmg: c.hazardEmberDamage, popup: true };
         }
       }
-      if (hit) break;
     }
-    if (hit) {
-      this.invuln = c.hazardDamageCooldown;
-      return damageAcc + c.hazardEmberDamage;
-    }
-    return damageAcc;
+    return { dmg: 0, popup: false };
+  }
+
+  updateFireParticles(dt) {
+    const c = this.config;
+    const drag = c.hazardParticleDrag;
+    this.fireParticles = this.fireParticles.filter((p) => {
+      p.life -= dt;
+      if (p.life <= 0) {
+        return false;
+      }
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 1 - drag * dt;
+      p.vy *= 1 - drag * dt;
+      p.x = wrapCanvasCoord(p.x, c.canvasWidth);
+      p.y = wrapCanvasCoord(p.y, c.canvasHeight);
+      return true;
+    });
+  }
+
+  fireParticlesAlive() {
+    return this.fireParticles.some((p) => p.life > 0);
   }
 
   /**
-   * @returns {number} Vahinkoa terveyteen (yhteensä tältä framelta).
+   * @returns {{ damage: number, wavePopup: boolean, emberPopup: boolean }}
    */
   update(dt, snake) {
     const c = this.config;
-    this.invuln = Math.max(0, this.invuln - dt);
+    this.waveHitCd = Math.max(0, this.waveHitCd - dt);
+    this.emberHitCd = Math.max(0, this.emberHitCd - dt);
+
     let damage = 0;
+    let wavePopup = false;
+    let emberPopup = false;
 
     if (this.phase === 'idle') {
       this.idleTimer -= dt;
       if (this.idleTimer <= 0) {
         this.startWarning();
       }
-      return damage;
+      return { damage, wavePopup, emberPopup };
     }
 
     if (this.phase === 'warning') {
@@ -263,119 +348,70 @@ export class HazardWaveSystem {
       if (this.warningTimer <= 0) {
         this.startSweep();
       }
-      return damage;
+      return { damage, wavePopup, emberPopup };
     }
 
     if (this.phase === 'sweep') {
-      damage = this.applyWaveDamage(snake, damage);
+      const wv = this.applyWaveDamage(snake);
+      damage += wv.dmg;
+      if (wv.popup) wavePopup = true;
+
+      this.spawnSweepParticles(dt);
       this.advanceSweep(dt);
+      this.updateFireParticles(dt);
+
+      const tr = this.applyTrailDamage(snake);
+      damage += tr.dmg;
+      if (tr.popup) emberPopup = true;
+
       if (this.sweepFinished()) {
-        this.spawnEmbers();
         this.phase = 'embers';
       }
-      return damage;
+      return { damage, wavePopup, emberPopup };
     }
 
-    // embers
-    damage = this.applyEmberDamage(snake, damage);
-    let alive = 0;
-    for (let i = 0; i < this.embers.length; i += 1) {
-      const em = this.embers[i];
-      em.life -= dt;
-      if (em.life <= 0) continue;
-      alive += 1;
-      em.x += em.vx * dt;
-      em.y += em.vy * dt;
-      em.vx *= 1 - c.hazardEmberDrag * dt;
-      em.vy *= 1 - c.hazardEmberDrag * dt;
-      em.x = wrapCanvasCoord(em.x, c.canvasWidth);
-      em.y = wrapCanvasCoord(em.y, c.canvasHeight);
-    }
-    if (alive === 0) {
+    const tr2 = this.applyTrailDamage(snake);
+    damage += tr2.dmg;
+    if (tr2.popup) emberPopup = true;
+
+    this.updateFireParticles(dt);
+
+    if (!this.fireParticlesAlive()) {
       this.resetIdle();
     }
-    return damage;
+    return { damage, wavePopup, emberPopup };
   }
 
-  drawBackdrop(ctx) {
-    const c = this.config;
-    const w = c.canvasWidth;
-    const h = c.canvasHeight;
-
-    if (this.phase === 'warning') {
-      const pulse = 0.35 + 0.35 * Math.sin(Date.now() / 120 + this.warningTimer * 8);
-      ctx.save();
-      ctx.globalAlpha = pulse * 0.55;
-      if (this.direction === 'east') {
-        const g = ctx.createLinearGradient(0, 0, 52, 0);
-        g.addColorStop(0, 'rgba(220,40,20,0.95)');
-        g.addColorStop(1, 'rgba(255,140,40,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, 52, h);
-      } else if (this.direction === 'west') {
-        const g = ctx.createLinearGradient(w, 0, w - 52, 0);
-        g.addColorStop(0, 'rgba(220,40,20,0.95)');
-        g.addColorStop(1, 'rgba(255,140,40,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(w - 52, 0, 52, h);
-      } else if (this.direction === 'south') {
-        const g = ctx.createLinearGradient(0, 0, 0, 52);
-        g.addColorStop(0, 'rgba(220,40,20,0.95)');
-        g.addColorStop(1, 'rgba(255,140,40,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, 0, w, 52);
-      } else {
-        const g = ctx.createLinearGradient(0, h, 0, h - 52);
-        g.addColorStop(0, 'rgba(220,40,20,0.95)');
-        g.addColorStop(1, 'rgba(255,140,40,0)');
-        ctx.fillStyle = g;
-        ctx.fillRect(0, h - 52, w, 52);
-      }
-      ctx.restore();
-
-      ctx.save();
-      ctx.globalAlpha = 0.85;
-      this.warningSparks.forEach((sp) => {
-        const bob = Math.sin(Date.now() / 200 + sp.phase) * 3;
-        ctx.fillStyle = sp.hue === 'red' ? '#ff3322' : '#ff8800';
-        ctx.beginPath();
-        ctx.arc(sp.x, sp.y + bob, 3 + Math.sin(sp.phase + Date.now() / 150), 0, Math.PI * 2);
-        ctx.fill();
-      });
-      ctx.restore();
-    }
-
-    if (this.phase === 'sweep') {
-      const { rx, ry, rw, rh } = this.sweepBandRect();
-      ctx.save();
-      ctx.globalAlpha = 0.72;
-      const grd = ctx.createLinearGradient(rx, ry, rx + rw, ry + rh);
-      grd.addColorStop(0, 'rgba(255,60,30,0.95)');
-      grd.addColorStop(0.45, 'rgba(255,160,40,0.85)');
-      grd.addColorStop(1, 'rgba(255,220,120,0.35)');
-      ctx.fillStyle = grd;
-      ctx.fillRect(rx, ry, rw, rh);
-      ctx.strokeStyle = 'rgba(255,255,220,0.5)';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(rx + 1, ry + 1, rw - 2, rh - 2);
-      ctx.restore();
-    }
-  }
-
-  drawEmbers(ctx) {
-    if (this.phase !== 'embers') {
+  drawWarning(ctx) {
+    if (this.phase !== 'warning') {
       return;
     }
     ctx.save();
-    this.embers.forEach((em) => {
-      if (em.life <= 0) return;
-      const a = (em.life / em.maxLife) * 0.9;
-      ctx.globalAlpha = a;
-      ctx.fillStyle = em.hot ? '#ff4418' : '#ff9500';
-      ctx.shadowColor = '#ff6600';
-      ctx.shadowBlur = 8;
+    ctx.globalAlpha = 0.88;
+    this.warningSparks.forEach((sp) => {
+      const bob = Math.sin(Date.now() / 200 + sp.phase) * 3;
+      ctx.fillStyle = sp.hue === 'red' ? '#ff3322' : '#ff8800';
       ctx.beginPath();
-      ctx.arc(em.x, em.y, em.r, 0, Math.PI * 2);
+      ctx.arc(sp.x, sp.y + bob, 3 + Math.sin(sp.phase + Date.now() / 150), 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  drawFireParticles(ctx) {
+    if (this.fireParticles.length === 0) {
+      return;
+    }
+    ctx.save();
+    this.fireParticles.forEach((p) => {
+      if (p.life <= 0) return;
+      const a = (p.life / p.maxLife) * (p.kind === 'crest' ? 0.92 : 0.88);
+      ctx.globalAlpha = a;
+      ctx.fillStyle = p.hot ? '#ff4418' : '#ff9500';
+      ctx.shadowColor = '#ff3300';
+      ctx.shadowBlur = p.kind === 'crest' ? 10 : 7;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.restore();

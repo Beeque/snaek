@@ -121,7 +121,7 @@ export class Collectibles {
 
   /**
    * @param blackOrbScoreEnergy Mustan pallon pisteet = tämä energiamäärä (kun boost voimassa); muuten null.
-   * @returns {{ scoreGained: number, energyGained: number }}
+   * @returns {{ scoreGained: number, energyGained: number, ateBlack: boolean, ateYellow: boolean }}
    */
   updateAndCollect(dt, snake, blackOrbScoreEnergy) {
     const config = this.config;
@@ -132,6 +132,8 @@ export class Collectibles {
 
     let scoreGained = 0;
     let energyGained = 0;
+    let ateBlack = false;
+    let ateYellow = false;
 
     const hx = snake.head.x;
     const hy = snake.head.y;
@@ -145,14 +147,14 @@ export class Collectibles {
         this.placeOrb(this.orb, snake);
         this.orb.timeLeft = lifeTotal;
       }
-      return { scoreGained, energyGained };
+      return { scoreGained, energyGained, ateBlack, ateYellow };
     }
 
     this.orb.timeLeft -= dt;
     if (this.orb.timeLeft <= 0) {
       this.orb = null;
       this.spawnIn = randomSpawnDelay(config);
-      return { scoreGained, energyGained };
+      return { scoreGained, energyGained, ateBlack, ateYellow };
     }
 
     const orb = this.orb;
@@ -161,11 +163,13 @@ export class Collectibles {
     const dist = torusDistance(hx, hy, ox, oy, w, h);
     if (dist < headR + r - config.pickupOverlapSlack) {
       if (orb.type === 'black') {
+        ateBlack = true;
         snake.grow(config.growSegmentsPerBlack);
         if (typeof blackOrbScoreEnergy === 'number' && blackOrbScoreEnergy > 0) {
           scoreGained += Math.round(blackOrbScoreEnergy);
         }
       } else {
+        ateYellow = true;
         energyGained += config.yellowEnergyRestore;
       }
 
@@ -173,6 +177,6 @@ export class Collectibles {
       this.spawnIn = randomSpawnDelay(config);
     }
 
-    return { scoreGained, energyGained };
+    return { scoreGained, energyGained, ateBlack, ateYellow };
   }
 }
