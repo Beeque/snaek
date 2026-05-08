@@ -275,14 +275,15 @@ export class HazardWaveSystem {
     if (this.waveHitCd > 0) {
       return { dmg: 0, popup: false };
     }
-    for (let i = 0; i < snake.segments.length; i += 1) {
-      const seg = snake.segments[i];
-      const sx = wrapCanvasCoord(seg.x, c.canvasWidth);
-      const sy = wrapCanvasCoord(seg.y, c.canvasHeight);
-      if (circleRectOverlap(sx, sy, seg.radius, rx, ry, rw, rh)) {
-        this.waveHitCd = c.hazardWaveHitCooldown;
-        return { dmg: c.hazardWaveDamage, popup: true };
-      }
+    const headSeg = snake.segments[0];
+    if (!headSeg) {
+      return { dmg: 0, popup: false };
+    }
+    const sx = wrapCanvasCoord(headSeg.x, c.canvasWidth);
+    const sy = wrapCanvasCoord(headSeg.y, c.canvasHeight);
+    if (circleRectOverlap(sx, sy, headSeg.radius, rx, ry, rw, rh)) {
+      this.waveHitCd = c.hazardWaveHitCooldown;
+      return { dmg: c.hazardWaveDamage, popup: true };
     }
     return { dmg: 0, popup: false };
   }
@@ -294,21 +295,21 @@ export class HazardWaveSystem {
     if (this.emberHitCd > 0) {
       return { dmg: 0, popup: false };
     }
-    const maxSeg = Math.min(snake.segments.length, c.hazardTrailCollisionSegments ?? 8);
+    const headSeg = snake.segments[0];
+    if (!headSeg) {
+      return { dmg: 0, popup: false };
+    }
+    const sx = wrapCanvasCoord(headSeg.x, w);
+    const sy = wrapCanvasCoord(headSeg.y, h);
     for (let e = 0; e < this.fireParticles.length; e += 1) {
       const em = this.fireParticles[e];
       if (em.life <= 0 || em.kind !== 'trail') continue;
       const hitR = em.r + (c.hazardTrailCollisionPad ?? 0);
-      for (let s = 0; s < maxSeg; s += 1) {
-        const seg = snake.segments[s];
-        const sx = wrapCanvasCoord(seg.x, w);
-        const sy = wrapCanvasCoord(seg.y, h);
-        const maxD = seg.radius + hitR - 1;
-        const maxD2 = maxD * maxD;
-        if (torusDistanceSq(sx, sy, em.x, em.y, w, h) < maxD2) {
-          this.emberHitCd = c.hazardEmberHitCooldown;
-          return { dmg: c.hazardEmberDamage, popup: true };
-        }
+      const maxD = headSeg.radius + hitR - 1;
+      const maxD2 = maxD * maxD;
+      if (torusDistanceSq(sx, sy, em.x, em.y, w, h) < maxD2) {
+        this.emberHitCd = c.hazardEmberHitCooldown;
+        return { dmg: c.hazardEmberDamage, popup: true };
       }
     }
     return { dmg: 0, popup: false };

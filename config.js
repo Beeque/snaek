@@ -69,8 +69,6 @@ export const GAME_CONFIG = {
   hazardParticleDrag: 1.15,
   /** 0 = ei shadowBluria (iso FPS-voitto). */
   hazardParticleShadowBlur: 0,
-  /** Trail-törmäys vain N ensimmäistä segmenttiä (pää + kaula riittää). */
-  hazardTrailCollisionSegments: 8,
   hazardTrailCollisionPad: 0,
 
   /** Asteroidit — hitaat pyörivät mustat palaset (Asteroids-tyyli). */
