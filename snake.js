@@ -33,6 +33,20 @@ export class Snake {
     this.speed = newSpeed;
   }
 
+  /** Adds tail segments at the current tail position; radii refresh next updateSegments. */
+  grow(count = 1) {
+    const config = this.config;
+    const tail = this.segments[this.segments.length - 1];
+    for (let k = 0; k < count; k += 1) {
+      const index = this.segments.length;
+      this.segments.push({
+        x: tail.x,
+        y: tail.y,
+        radius: config.headRadius * Math.pow(config.radiusFalloff, index)
+      });
+    }
+  }
+
   update(dt, steer) {
     const config = this.config;
     const targetTurn = steer * config.maxTurnSpeed * (Math.PI / 180);

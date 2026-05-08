@@ -1,3 +1,41 @@
+function drawOrbToroidal(ctx, x, y, radius, canvasWidth, canvasHeight, fillStyle, strokeStyle = null) {
+  ctx.fillStyle = fillStyle;
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+  }
+  for (let ix = -1; ix <= 1; ix += 1) {
+    for (let iy = -1; iy <= 1; iy += 1) {
+      const cx = x + ix * canvasWidth;
+      const cy = y + iy * canvasHeight;
+      if (cx + radius <= 0 || cx - radius >= canvasWidth || cy + radius <= 0 || cy - radius >= canvasHeight) {
+        continue;
+      }
+      ctx.beginPath();
+      ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+      ctx.fill();
+      if (strokeStyle) {
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+export function drawCollectibles(ctx, config, collectibles) {
+  if (!collectibles) {
+    return;
+  }
+  collectibles.orbs.forEach((orb) => {
+    const pos = collectibles.getOrbDrawPosition(orb);
+    const r = collectibles.orbRadius(orb);
+    if (orb.type === 'yellow') {
+      drawOrbToroidal(ctx, pos.x, pos.y, r, config.canvasWidth, config.canvasHeight, config.pickupYellowColor, config.pickupYellowStroke);
+    } else {
+      drawOrbToroidal(ctx, pos.x, pos.y, r, config.canvasWidth, config.canvasHeight, config.pickupBlackColor, '#1a1a1a');
+    }
+  });
+}
+
 function drawSnakeSegmentsToroidal(ctx, snake, canvasWidth, canvasHeight) {
   snake.segments.forEach((segment) => {
     const wx = segment.x;
@@ -18,10 +56,15 @@ function drawSnakeSegmentsToroidal(ctx, snake, canvasWidth, canvasHeight) {
   });
 }
 
-export function renderFrame(ctx, config, snake, particles) {
+export function renderFrame(ctx, config, snake, particles, collectibles) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.fillStyle = config.backgroundColor;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  ctx.save();
+  ctx.filter = 'blur(0.8px)';
+  drawCollectibles(ctx, config, collectibles);
+  ctx.restore();
 
   ctx.filter = 'blur(1.2px)';
   ctx.fillStyle = config.snakeColor;

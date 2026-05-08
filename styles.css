@@ -29,9 +29,35 @@ body {
   left: 1.5rem;
   display: flex;
   flex-direction: row;
+  align-items: flex-end;
   gap: 1rem;
   z-index: 10;
   pointer-events: none;
+}
+
+.hud-score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 72px;
+}
+
+.hud-score__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #222222;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.hud-score__value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #111111;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .stat-bar {

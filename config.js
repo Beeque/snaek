@@ -17,5 +17,21 @@ export const GAME_CONFIG = {
   turnDrag: 3,
   waveAmplitude: 15,
   waveFrequency: 1.2,
-  maxEnergy: 100
+  maxEnergy: 100,
+
+  pickupBlackCount: 6,
+  pickupYellowCount: 4,
+  pickupBlackRadius: 11,
+  pickupYellowRadius: 10,
+  pickupSpawnMargin: 48,
+  pickupSpawnMinDistFromSnake: 52,
+  pickupOverlapSlack: 2,
+  growSegmentsPerBlack: 2,
+  scorePointsPerBlackBoost: 50,
+  yellowEnergyRestore: 32,
+  orbFloatAmplitude: 7,
+  orbFloatSpeed: 2.2,
+  pickupBlackColor: '#0d0d0d',
+  pickupYellowColor: '#e8b923',
+  pickupYellowStroke: '#9a7200'
 };

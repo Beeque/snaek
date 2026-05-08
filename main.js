@@ -3,7 +3,8 @@ import { InputManager } from './input.js';
 import { Snake } from './snake.js';
 import { ParticleSystem } from './particles.js';
 import { renderFrame } from './render.js';
-import { updateHealthBar, updateEnergyBar } from './ui.js';
+import { Collectibles } from './collectibles.js';
+import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
@@ -11,7 +12,9 @@ const ctx = canvas.getContext('2d');
 const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
+const collectibles = new Collectibles(GAME_CONFIG, snake);
 let currentEnergy = GAME_CONFIG.maxEnergy;
+let score = 0;
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -39,7 +42,14 @@ function animate(timestamp) {
     
     snake.setSpeed(effectiveSpeed);
     snake.update(delta, input.getSteer());
-    
+
+    const boostingForScore = input.isBoostActive() && currentEnergy > 0;
+    const pickup = collectibles.updateAndCollect(delta, snake, boostingForScore);
+    score += pickup.scoreGained;
+    if (pickup.energyGained > 0) {
+      currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
+    }
+
     snake.segments.forEach((segment, index) => {
       particles.emitFromSnake(segment, GAME_CONFIG);
       if (input.isBoostActive()) {
@@ -58,11 +68,12 @@ function animate(timestamp) {
   
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles);
-  
+  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles);
+
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
   updateHealthBar(100);
   updateEnergyBar(energyPercent);
+  updateScoreDisplay(score);
 
   requestAnimationFrame(animate);
 }

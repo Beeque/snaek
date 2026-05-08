@@ -11,3 +11,10 @@ export function updateEnergyBar(percentage) {
     bar.style.width = `${Math.max(0, Math.min(100, percentage))}%`;
   }
 }
+
+export function updateScoreDisplay(value) {
+  const el = document.getElementById('score-display');
+  if (el) {
+    el.textContent = String(Math.floor(value));
+  }
+}
