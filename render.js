@@ -1,14 +1,13 @@
-import { wrapCanvasCoord } from './snake.js';
-
 function drawSnakeSegmentsToroidal(ctx, snake, canvasWidth, canvasHeight) {
   snake.segments.forEach((segment) => {
-    const sx = wrapCanvasCoord(segment.x, canvasWidth);
-    const sy = wrapCanvasCoord(segment.y, canvasHeight);
-    const { radius: r } = segment;
-    for (let ix = -1; ix <= 1; ix += 1) {
-      for (let iy = -1; iy <= 1; iy += 1) {
-        const cx = sx + ix * canvasWidth;
-        const cy = sy + iy * canvasHeight;
+    const wx = segment.x;
+    const wy = segment.y;
+    const r = segment.radius;
+    // Raw world coords + torus copies (no per-segment % — avoids float drift and spacing bugs).
+    for (let ix = -2; ix <= 2; ix += 1) {
+      for (let iy = -2; iy <= 2; iy += 1) {
+        const cx = wx + ix * canvasWidth;
+        const cy = wy + iy * canvasHeight;
         if (cx + r <= 0 || cx - r >= canvasWidth || cy + r <= 0 || cy - r >= canvasHeight) {
           continue;
         }

@@ -5,11 +5,6 @@ export function wrapCanvasCoord(value, extent) {
   return v;
 }
 
-/** Shortest signed difference on a torus; works for deltas larger than one period. */
-export function shortestTorusDelta(delta, extent) {
-  return delta - Math.round(delta / extent) * extent;
-}
-
 export class Snake {
   constructor(config) {
     this.config = config;
@@ -61,7 +56,32 @@ export class Snake {
       this.path.length = 800;
     }
 
+    this.rebaseWorldNearOrigin();
     this.updateSegments();
+  }
+
+  /**
+   * Shift all world coordinates by whole periods so numbers stay small.
+   * Keeps float math stable and lets the renderer use raw world coords + torus copies.
+   */
+  rebaseWorldNearOrigin() {
+    const w = this.config.canvasWidth;
+    const h = this.config.canvasHeight;
+    const ox = Math.floor(this.head.worldX / w) * w;
+    const oy = Math.floor(this.head.worldY / h) * h;
+    if (ox === 0 && oy === 0) {
+      return;
+    }
+    this.head.worldX -= ox;
+    this.head.worldY -= oy;
+    for (let i = 0; i < this.path.length; i += 1) {
+      this.path[i].x -= ox;
+      this.path[i].y -= oy;
+    }
+    for (let i = 0; i < this.segments.length; i += 1) {
+      this.segments[i].x -= ox;
+      this.segments[i].y -= oy;
+    }
   }
 
   updateSegments() {
@@ -86,8 +106,8 @@ export class Snake {
       const segmentDistance = this.getSegmentDistance(pathIndex) || 1;
       const ratio = Math.min(1, Math.max(0, (targetDistance - traveled) / segmentDistance));
 
-      let dx = shortestTorusDelta(to.x - from.x, config.canvasWidth);
-      let dy = shortestTorusDelta(to.y - from.y, config.canvasHeight);
+      const dx = to.x - from.x;
+      const dy = to.y - from.y;
 
       segment.x = from.x + dx * ratio;
       segment.y = from.y + dy * ratio;
@@ -102,23 +122,15 @@ export class Snake {
     if (!current || !next) {
       return 0;
     }
-    const w = this.config.canvasWidth;
-    const h = this.config.canvasHeight;
-    const dx = shortestTorusDelta(next.x - current.x, w);
-    const dy = shortestTorusDelta(next.y - current.y, h);
+    const dx = next.x - current.x;
+    const dy = next.y - current.y;
     return Math.hypot(dx, dy);
   }
 
   addPathPoint(point) {
-    const config = this.config;
-    const w = config.canvasWidth;
-    const h = config.canvasHeight;
     const last = this.path[0];
-    let dx = point.x - last.x;
-    let dy = point.y - last.y;
-    // Safety if coordinates ever disagree (floating drift); normally dx/dy are tiny.
-    dx = shortestTorusDelta(dx, w);
-    dy = shortestTorusDelta(dy, h);
+    const dx = point.x - last.x;
+    const dy = point.y - last.y;
 
     const distance = Math.hypot(dx, dy);
     if (distance < 0.1) {
