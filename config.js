@@ -1,7 +1,8 @@
 export const GAME_CONFIG = {
   canvasWidth: 960,
   canvasHeight: 640,
-  backgroundColor: '#999999',
+  /** Pelikenttä hieman tummempi kuin sivun `--bg-color` (styles.css). */
+  backgroundColor: '#6c7078',
   snakeColor: '#000000',
   segmentCount: 24,
   headRadius: 18,

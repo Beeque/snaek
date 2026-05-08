@@ -121,7 +121,7 @@ function animate(timestamp) {
   floatingTexts.update(delta);
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, asteroidField, floatingTexts);
+  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, asteroidField, floatingTexts, timestamp / 1000);
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
   const healthPercent = (currentHealth / GAME_CONFIG.maxHealth) * 100;
