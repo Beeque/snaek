@@ -22,7 +22,7 @@ export class Collectibles {
   constructor(config) {
     this.config = config;
     this.time = 0;
-    /** Yksi pallo kerrallaan: musta tai keltainen. */
+    /** Yksi pallo kerrallaan. */
     this.orb = null;
     this.spawnIn = config.pickupInitialSpawnDelay;
   }
@@ -40,8 +40,12 @@ export class Collectibles {
   pickRandomType() {
     const b = this.config.pickupSpawnWeightBlack;
     const y = this.config.pickupSpawnWeightYellow;
-    const sum = b + y;
-    return Math.random() * sum < b ? 'black' : 'yellow';
+    const g = this.config.pickupSpawnWeightGreen;
+    const sum = b + y + g;
+    const r = Math.random() * sum;
+    if (r < b) return 'black';
+    if (r < b + y) return 'yellow';
+    return 'green';
   }
 
   getActiveOrbs() {
@@ -111,7 +115,10 @@ export class Collectibles {
   }
 
   orbRadius(orb) {
-    return orb.type === 'yellow' ? this.config.pickupYellowRadius : this.config.pickupBlackRadius;
+    const c = this.config;
+    if (orb.type === 'yellow') return c.pickupYellowRadius;
+    if (orb.type === 'green') return c.pickupGreenRadius;
+    return c.pickupBlackRadius;
   }
 
   lifetimeSeconds() {
@@ -121,7 +128,7 @@ export class Collectibles {
 
   /**
    * @param blackOrbScoreEnergy Mustan pallon pisteet = tämä energiamäärä (kun boost voimassa); muuten null.
-   * @returns {{ scoreGained: number, energyGained: number, ateBlack: boolean, ateYellow: boolean }}
+   * @returns {{ scoreGained: number, energyGained: number, healthGained: number, ateBlack: boolean, ateYellow: boolean, ateGreen: boolean }}
    */
   updateAndCollect(dt, snake, blackOrbScoreEnergy) {
     const config = this.config;
@@ -132,8 +139,10 @@ export class Collectibles {
 
     let scoreGained = 0;
     let energyGained = 0;
+    let healthGained = 0;
     let ateBlack = false;
     let ateYellow = false;
+    let ateGreen = false;
 
     const hx = snake.head.x;
     const hy = snake.head.y;
@@ -147,14 +156,14 @@ export class Collectibles {
         this.placeOrb(this.orb, snake);
         this.orb.timeLeft = lifeTotal;
       }
-      return { scoreGained, energyGained, ateBlack, ateYellow };
+      return { scoreGained, energyGained, healthGained, ateBlack, ateYellow, ateGreen };
     }
 
     this.orb.timeLeft -= dt;
     if (this.orb.timeLeft <= 0) {
       this.orb = null;
       this.spawnIn = randomSpawnDelay(config);
-      return { scoreGained, energyGained, ateBlack, ateYellow };
+      return { scoreGained, energyGained, healthGained, ateBlack, ateYellow, ateGreen };
     }
 
     const orb = this.orb;
@@ -168,15 +177,18 @@ export class Collectibles {
         if (typeof blackOrbScoreEnergy === 'number' && blackOrbScoreEnergy > 0) {
           scoreGained += Math.round(blackOrbScoreEnergy);
         }
-      } else {
+      } else if (orb.type === 'yellow') {
         ateYellow = true;
         energyGained += config.yellowEnergyRestore;
+      } else {
+        ateGreen = true;
+        healthGained += config.greenHealthRestore;
       }
 
       this.orb = null;
       this.spawnIn = randomSpawnDelay(config);
     }
 
-    return { scoreGained, energyGained, ateBlack, ateYellow };
+    return { scoreGained, energyGained, healthGained, ateBlack, ateYellow, ateGreen };
   }
 }

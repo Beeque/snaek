@@ -30,6 +30,8 @@ export function drawCollectibles(ctx, config, collectibles) {
     const r = collectibles.orbRadius(orb);
     if (orb.type === 'yellow') {
       drawOrbToroidal(ctx, pos.x, pos.y, r, config.canvasWidth, config.canvasHeight, config.pickupYellowColor, config.pickupYellowStroke);
+    } else if (orb.type === 'green') {
+      drawOrbToroidal(ctx, pos.x, pos.y, r, config.canvasWidth, config.canvasHeight, config.pickupGreenColor, config.pickupGreenStroke);
     } else {
       drawOrbToroidal(ctx, pos.x, pos.y, r, config.canvasWidth, config.canvasHeight, config.pickupBlackColor, '#1a1a1a');
     }

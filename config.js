@@ -24,11 +24,14 @@ export const GAME_CONFIG = {
   pickupRespawnDelayMin: 2,
   pickupRespawnDelayMax: 4.8,
   pickupInitialSpawnDelay: 0.5,
-  /** Spawn-suhteet musta : keltainen (esim. 10 ja 1 → ~91 % mustia). */
+  /** Spawn-painot musta : keltainen : vihreä. */
   pickupSpawnWeightBlack: 10,
   pickupSpawnWeightYellow: 1,
+  pickupSpawnWeightGreen: 2,
   pickupBlackRadius: 11,
   pickupYellowRadius: 10,
+  pickupGreenRadius: 10,
+  greenHealthRestore: 25,
   pickupSpawnMargin: 48,
   pickupSpawnMinDistFromSnake: 52,
   pickupOverlapSlack: 2,
@@ -76,9 +79,13 @@ export const GAME_CONFIG = {
   orbFloatSpeedSecondary: 1.35,
   orbParticleRateBlack: 14,
   orbParticleRateYellow: 16,
+  orbParticleRateGreen: 15,
   orbParticleRadiusBlack: 2.2,
   orbParticleRadiusYellow: 2,
+  orbParticleRadiusGreen: 2,
   pickupBlackColor: '#0d0d0d',
   pickupYellowColor: '#e8b923',
-  pickupYellowStroke: '#9a7200'
+  pickupYellowStroke: '#9a7200',
+  pickupGreenColor: '#2ecc71',
+  pickupGreenStroke: '#1e8448'
 };

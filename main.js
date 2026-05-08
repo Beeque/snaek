@@ -70,11 +70,17 @@ function animate(timestamp) {
     if (pickup.energyGained > 0) {
       currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
     }
+    if (pickup.healthGained > 0) {
+      currentHealth = Math.min(GAME_CONFIG.maxHealth, currentHealth + pickup.healthGained);
+    }
     if (pickup.ateBlack && pickup.scoreGained > 0) {
       floatingTexts.add(snake.head.x, snake.head.y - 28, `+${pickup.scoreGained}`, '#0a0a0a', 0.9);
     }
     if (pickup.ateYellow && pickup.energyGained > 0) {
       floatingTexts.add(snake.head.x, snake.head.y - 24, `+${Math.round(pickup.energyGained)}`, '#6b4e0a', 0.85);
+    }
+    if (pickup.ateGreen && pickup.healthGained > 0) {
+      floatingTexts.add(snake.head.x, snake.head.y - 30, `+${pickup.healthGained}`, '#0f6b2e', 0.9);
     }
 
     const hz = hazards.update(delta, snake);

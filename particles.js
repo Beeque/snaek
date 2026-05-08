@@ -42,7 +42,12 @@ export class ParticleSystem {
       return;
     }
     const orb = orbs[0];
-    const rate = orb.type === 'yellow' ? config.orbParticleRateYellow : config.orbParticleRateBlack;
+    const rate =
+      orb.type === 'yellow'
+        ? config.orbParticleRateYellow
+        : orb.type === 'green'
+          ? config.orbParticleRateGreen
+          : config.orbParticleRateBlack;
     this._pickupParticleCarry += rate * dt;
     while (this._pickupParticleCarry >= 1) {
       this._pickupParticleCarry -= 1;
@@ -50,11 +55,16 @@ export class ParticleSystem {
       const angle = Math.random() * Math.PI * 2;
       const speed = 10 + Math.random() * 22;
       const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed - (orb.type === 'yellow' ? 14 : 8);
+      const vyOff = orb.type === 'yellow' ? 14 : orb.type === 'green' ? 10 : 8;
+      const vy = Math.sin(angle) * speed - vyOff;
       const life = 0.45 + Math.random() * 0.55;
       if (orb.type === 'yellow') {
         const r = config.orbParticleRadiusYellow + Math.random() * 1;
         this.emit(x, y, vx, vy, life, r, '#FFD700', 18, 'pickup');
+      } else if (orb.type === 'green') {
+        const r = config.orbParticleRadiusGreen + Math.random() * 0.9;
+        const shade = Math.random() > 0.4 ? '#34d17c' : '#27ae60';
+        this.emit(x, y, vx * 0.92, vy * 0.92, life, r, shade, 20, 'pickup');
       } else {
         const r = config.orbParticleRadiusBlack + Math.random() * 0.9;
         const shade = Math.random() > 0.45 ? '#696969' : '#585858';
