@@ -11,6 +11,7 @@ import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
+const motionEnableBtn = document.getElementById('motion-enable-btn');
 
 const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
@@ -130,14 +131,22 @@ window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', () => {
   resizeCanvas();
   if (input.isMotionAvailable()) {
-    const activate = () => {
-      input.enableMotionControls().finally(() => {
-        window.removeEventListener('click', activate);
-        window.removeEventListener('touchstart', activate);
-      });
-    };
-    window.addEventListener('click', activate, { once: true });
-    window.addEventListener('touchstart', activate, { once: true });
+    if (input.needsMotionGesture()) {
+      if (motionEnableBtn) {
+        motionEnableBtn.hidden = false;
+        motionEnableBtn.addEventListener('click', async () => {
+          const ok = await input.enableMotionControls();
+          if (ok) {
+            motionEnableBtn.hidden = true;
+          }
+        });
+      }
+    } else {
+      input.enableMotionControls();
+      if (motionEnableBtn) {
+        motionEnableBtn.hidden = true;
+      }
+    }
   }
   requestAnimationFrame(animate);
 });

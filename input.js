@@ -66,6 +66,9 @@ export class InputManager {
     if (!this.motionSupported || !this._orientationHandler) {
       return false;
     }
+    if (this.motionEnabled) {
+      return true;
+    }
     try {
       const req = window.DeviceOrientationEvent?.requestPermission;
       if (typeof req === 'function') {
@@ -84,6 +87,10 @@ export class InputManager {
 
   isMotionAvailable() {
     return this.motionSupported;
+  }
+
+  needsMotionGesture() {
+    return typeof window.DeviceOrientationEvent?.requestPermission === 'function';
   }
 
   update(dt) {
