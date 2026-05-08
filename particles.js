@@ -32,7 +32,7 @@ export class ParticleSystem {
     }
   }
 
-  emitBoostParticles(segment, count = 2) {
+  emitBoostParticles(segment, config, count = 2) {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 15 + Math.random() * 25;  // Pienempi nopeus

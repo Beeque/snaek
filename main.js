@@ -49,10 +49,10 @@ function animate(timestamp) {
         const middlePoint = Math.floor(snake.segments.length / 2);
         if (index >= middlePoint) {
           // Enemmän partikkeleita hännästä
-          particles.emitBoostParticles(segment, 1);
+          particles.emitBoostParticles(segment, GAME_CONFIG, 1);
         } else if (index < 6 && Math.random() < 0.3) {
           // Harvemmin myös päästä (30% todennäköisyys)
-          particles.emitBoostParticles(segment, 1);
+          particles.emitBoostParticles(segment, GAME_CONFIG, 1);
         }
       }
     });
