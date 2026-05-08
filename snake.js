@@ -40,9 +40,11 @@ export class Snake {
     this.head.x += Math.cos(this.head.angle) * this.speed * dt;
     this.head.y += Math.sin(this.head.angle) * this.speed * dt;
 
-    const margin = config.headRadius * 1.2;
-    this.head.x = Math.min(Math.max(this.head.x, margin), config.canvasWidth - margin);
-    this.head.y = Math.min(Math.max(this.head.y, margin), config.canvasHeight - margin);
+    // Wrap around screen edges
+    if (this.head.x < 0) this.head.x += config.canvasWidth;
+    else if (this.head.x > config.canvasWidth) this.head.x -= config.canvasWidth;
+    if (this.head.y < 0) this.head.y += config.canvasHeight;
+    else if (this.head.y > config.canvasHeight) this.head.y -= config.canvasHeight;
 
     this.addPathPoint({ x: this.head.x, y: this.head.y });
     if (this.path.length > 800) {
@@ -74,8 +76,25 @@ export class Snake {
       const segmentDistance = this.getSegmentDistance(pathIndex) || 1;
       const ratio = Math.min(1, Math.max(0, (targetDistance - traveled) / segmentDistance));
 
-      segment.x = from.x + (to.x - from.x) * ratio;
-      segment.y = from.y + (to.y - from.y) * ratio;
+      // Handle wrap-around for smooth interpolation
+      let dx = to.x - from.x;
+      if (Math.abs(dx) > config.canvasWidth / 2) {
+        dx = dx > 0 ? dx - config.canvasWidth : dx + config.canvasWidth;
+      }
+      let dy = to.y - from.y;
+      if (Math.abs(dy) > config.canvasHeight / 2) {
+        dy = dy > 0 ? dy - config.canvasHeight : dy + config.canvasHeight;
+      }
+
+      segment.x = from.x + dx * ratio;
+      segment.y = from.y + dy * ratio;
+
+      // Wrap segment position
+      if (segment.x < 0) segment.x += config.canvasWidth;
+      else if (segment.x > config.canvasWidth) segment.x -= config.canvasWidth;
+      if (segment.y < 0) segment.y += config.canvasHeight;
+      else if (segment.y > config.canvasHeight) segment.y -= config.canvasHeight;
+
       segment.radius = config.headRadius * Math.pow(config.radiusFalloff, index);
     }
   }

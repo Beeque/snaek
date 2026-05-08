@@ -44,8 +44,16 @@ function animate(timestamp) {
     
     snake.segments.forEach((segment, index) => {
       particles.emitFromSnake(segment, GAME_CONFIG);
-      if (input.isBoostActive() && index < 6) {
-        particles.emitBoostParticles(segment, 1);
+      if (input.isBoostActive()) {
+        // Kultaiset partikkelit emitoidaan enimmäkseen madon keskiosasta/hännästä
+        const middlePoint = Math.floor(snake.segments.length / 2);
+        if (index >= middlePoint) {
+          // Enemmän partikkeleita hännästä
+          particles.emitBoostParticles(segment, 1);
+        } else if (index < 6 && Math.random() < 0.3) {
+          // Harvemmin myös päästä (30% todennäköisyys)
+          particles.emitBoostParticles(segment, 1);
+        }
       }
     });
   }

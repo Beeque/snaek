@@ -32,11 +32,11 @@ export class ParticleSystem {
   emitBoostParticles(segment, count = 2) {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 80 + Math.random() * 120;
+      const speed = 15 + Math.random() * 25;  // Pienempi nopeus
       const vx = Math.cos(angle) * speed;
       const vy = Math.sin(angle) * speed;
-      const life = 0.2 + Math.random() * 0.25;
-      const radius = segment.radius * 0.25;
+      const life = 1.2 + Math.random() * 0.8;  // Pidempi elinikä vilkkumiselle
+      const radius = segment.radius * 0.08;  // Paljon pienempi
 
       this.emit(segment.x, segment.y, vx, vy, life, radius, '#FFD700');
     }
@@ -55,7 +55,14 @@ export class ParticleSystem {
   draw(ctx) {
     this.particles.forEach((p) => {
       const alpha = Math.max(0, p.life / p.maxLife);
-      ctx.globalAlpha = alpha * 0.6;
+      // Kultaisille partikkeleille vilkkumisefekti
+      let finalAlpha = alpha * 0.6;
+      if (p.color === '#FFD700') {
+        // Vilkkuminen sin-funktion avulla
+        const twinkleFactor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 100));
+        finalAlpha = alpha * 0.8 * twinkleFactor;
+      }
+      ctx.globalAlpha = finalAlpha;
       ctx.fillStyle = p.color;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
