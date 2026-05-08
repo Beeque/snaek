@@ -68,10 +68,7 @@ export function renderFrame(ctx, config, snake, particles, collectibles, hazards
 
   if (hazards) {
     hazards.drawWarning(ctx);
-    ctx.save();
-    ctx.filter = 'blur(0.6px)';
     hazards.drawFireParticles(ctx);
-    ctx.restore();
   }
 
   ctx.filter = 'blur(1.2px)';

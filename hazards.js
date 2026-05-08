@@ -7,9 +7,9 @@ function torusDelta(dx, dy, w, h) {
   };
 }
 
-function torusDistance(ax, ay, bx, by, w, h) {
+function torusDistanceSq(ax, ay, bx, by, w, h) {
   const { dx, dy } = torusDelta(bx - ax, by - ay, w, h);
-  return Math.hypot(dx, dy);
+  return dx * dx + dy * dy;
 }
 
 function circleRectOverlap(cx, cy, cr, rx, ry, rw, rh) {
@@ -143,6 +143,13 @@ export class HazardWaveSystem {
     p.maxLife = p.life;
   }
 
+  trimParticlesToMax() {
+    const max = this.config.hazardFireParticleMax;
+    while (this.fireParticles.length > max) {
+      this.fireParticles.shift();
+    }
+  }
+
   spawnSweepParticles(dt) {
     const c = this.config;
     const w = c.canvasWidth;
@@ -152,8 +159,9 @@ export class HazardWaveSystem {
     const sp = c.hazardSweepSpeed;
     const ratio = c.hazardTrailSpeedRatio;
 
-    const nCrest = Math.max(0, Math.round(c.hazardCrestSpawnRate * dt));
-    const nTrail = Math.max(0, Math.round(c.hazardTrailSpawnRate * dt));
+    const sd = Math.min(dt, c.hazardSpawnDtCap ?? 0.022);
+    const nCrest = Math.max(0, Math.round(c.hazardCrestSpawnRate * sd));
+    const nTrail = Math.max(0, Math.round(c.hazardTrailSpawnRate * sd));
 
     for (let i = 0; i < nCrest; i += 1) {
       let x = 0;
@@ -213,6 +221,8 @@ export class HazardWaveSystem {
       }
       this.pushTrailParticle(x, y, vx, vy);
     }
+
+    this.trimParticlesToMax();
   }
 
   sweepBandRect() {
@@ -284,15 +294,18 @@ export class HazardWaveSystem {
     if (this.emberHitCd > 0) {
       return { dmg: 0, popup: false };
     }
+    const maxSeg = Math.min(snake.segments.length, c.hazardTrailCollisionSegments ?? 8);
     for (let e = 0; e < this.fireParticles.length; e += 1) {
       const em = this.fireParticles[e];
       if (em.life <= 0 || em.kind !== 'trail') continue;
-      for (let s = 0; s < snake.segments.length; s += 1) {
+      const hitR = em.r + (c.hazardTrailCollisionPad ?? 0);
+      for (let s = 0; s < maxSeg; s += 1) {
         const seg = snake.segments[s];
         const sx = wrapCanvasCoord(seg.x, w);
         const sy = wrapCanvasCoord(seg.y, h);
-        const d = torusDistance(sx, sy, em.x, em.y, w, h);
-        if (d < seg.radius + em.r - 1) {
+        const maxD = seg.radius + hitR - 1;
+        const maxD2 = maxD * maxD;
+        if (torusDistanceSq(sx, sy, em.x, em.y, w, h) < maxD2) {
           this.emberHitCd = c.hazardEmberHitCooldown;
           return { dmg: c.hazardEmberDamage, popup: true };
         }
@@ -304,10 +317,13 @@ export class HazardWaveSystem {
   updateFireParticles(dt) {
     const c = this.config;
     const drag = c.hazardParticleDrag;
-    this.fireParticles = this.fireParticles.filter((p) => {
+    const arr = this.fireParticles;
+    let wIdx = 0;
+    for (let rIdx = 0; rIdx < arr.length; rIdx += 1) {
+      const p = arr[rIdx];
       p.life -= dt;
       if (p.life <= 0) {
-        return false;
+        continue;
       }
       p.x += p.vx * dt;
       p.y += p.vy * dt;
@@ -315,8 +331,11 @@ export class HazardWaveSystem {
       p.vy *= 1 - drag * dt;
       p.x = wrapCanvasCoord(p.x, c.canvasWidth);
       p.y = wrapCanvasCoord(p.y, c.canvasHeight);
-      return true;
-    });
+      arr[wIdx] = p;
+      wIdx += 1;
+    }
+    arr.length = wIdx;
+    this.trimParticlesToMax();
   }
 
   fireParticlesAlive() {
@@ -402,18 +421,24 @@ export class HazardWaveSystem {
     if (this.fireParticles.length === 0) {
       return;
     }
+    const blur = this.config.hazardParticleShadowBlur ?? 0;
     ctx.save();
-    this.fireParticles.forEach((p) => {
-      if (p.life <= 0) return;
+    if (blur > 0) {
+      ctx.shadowColor = '#ff3300';
+      ctx.shadowBlur = blur;
+    }
+    const arr = this.fireParticles;
+    const pi2 = Math.PI * 2;
+    for (let i = 0; i < arr.length; i += 1) {
+      const p = arr[i];
+      if (p.life <= 0) continue;
       const a = (p.life / p.maxLife) * (p.kind === 'crest' ? 0.92 : 0.88);
       ctx.globalAlpha = a;
       ctx.fillStyle = p.hot ? '#ff4418' : '#ff9500';
-      ctx.shadowColor = '#ff3300';
-      ctx.shadowBlur = p.kind === 'crest' ? 10 : 7;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, p.r, 0, pi2);
       ctx.fill();
-    });
+    }
     ctx.restore();
   }
 }

@@ -46,9 +46,13 @@ export const GAME_CONFIG = {
   hazardWaveHitCooldown: 0.35,
   hazardEmberDamage: 1,
   hazardEmberHitCooldown: 0.5,
-  /** Partikkeleita / s rintaman poikkisuunnassa. */
-  hazardCrestSpawnRate: 520,
-  hazardTrailSpawnRate: 340,
+  /** Partikkeleita / s (pidä maltillisena; canvas-shadow + massapiirto on kallista). */
+  hazardCrestSpawnRate: 130,
+  hazardTrailSpawnRate: 85,
+  /** Turva: spawn-laskenta ei käytä dt:tä isompaa kuin tämä → ei spikeja välilehdellä. */
+  hazardSpawnDtCap: 0.022,
+  /** Enimmäismäärä elossa kerrallaan (vanhimmat poistetaan). */
+  hazardFireParticleMax: 380,
   /** Afterburn liikkuu tähän suhteeseen rintaman nopeudesta (0–1). */
   hazardTrailSpeedRatio: 0.78,
   hazardCrestLifeMin: 0.18,
@@ -60,6 +64,11 @@ export const GAME_CONFIG = {
   hazardTrailRadiusMin: 2.8,
   hazardTrailRadiusMax: 6.2,
   hazardParticleDrag: 1.15,
+  /** 0 = ei shadowBluria (iso FPS-voitto). */
+  hazardParticleShadowBlur: 0,
+  /** Trail-törmäys vain N ensimmäistä segmenttiä (pää + kaula riittää). */
+  hazardTrailCollisionSegments: 8,
+  hazardTrailCollisionPad: 0,
 
   orbFloatAmplitudeY: 18,
   orbFloatAmplitudeX: 6,
