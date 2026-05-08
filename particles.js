@@ -1,3 +1,5 @@
+import { wrapCanvasCoord } from './snake.js';
+
 export class ParticleSystem {
   constructor() {
     this.particles = [];
@@ -24,8 +26,9 @@ export class ParticleSystem {
       const vy = Math.sin(angle) * speed;
       const life = 0.3 + Math.random() * 0.3;
       const radius = segment.radius * 0.5;
-      
-      this.emit(segment.x, segment.y, vx, vy, life, radius);
+      const x = wrapCanvasCoord(segment.x, config.canvasWidth);
+      const y = wrapCanvasCoord(segment.y, config.canvasHeight);
+      this.emit(x, y, vx, vy, life, radius);
     }
   }
 
@@ -38,7 +41,9 @@ export class ParticleSystem {
       const life = 1.2 + Math.random() * 0.8;  // Pidempi elinikä vilkkumiselle
       const radius = segment.radius * 0.08;  // Paljon pienempi
 
-      this.emit(segment.x, segment.y, vx, vy, life, radius, '#FFD700');
+      const x = wrapCanvasCoord(segment.x, config.canvasWidth);
+      const y = wrapCanvasCoord(segment.y, config.canvasHeight);
+      this.emit(x, y, vx, vy, life, radius, '#FFD700');
     }
   }
 

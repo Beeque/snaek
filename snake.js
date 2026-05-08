@@ -1,3 +1,17 @@
+/** Normalizes coordinate to [0, extent). */
+export function wrapCanvasCoord(value, extent) {
+  let v = value % extent;
+  if (v < 0) v += extent;
+  return v;
+}
+
+/** Shortest difference on a torus (same extent as canvas width/height). */
+export function shortestTorusDelta(delta, extent) {
+  if (delta > extent / 2) return delta - extent;
+  if (delta < -extent / 2) return delta + extent;
+  return delta;
+}
+
 export class Snake {
   constructor(config) {
     this.config = config;
@@ -21,10 +35,6 @@ export class Snake {
     this.speed = newSpeed;
   }
 
-  setSpeed(newSpeed) {
-    this.speed = newSpeed;
-  }
-
   update(dt, steer) {
     const config = this.config;
     const targetTurn = steer * config.maxTurnSpeed * (Math.PI / 180);
@@ -40,7 +50,7 @@ export class Snake {
     this.head.x += Math.cos(this.head.angle) * this.speed * dt;
     this.head.y += Math.sin(this.head.angle) * this.speed * dt;
 
-    // Wrap around screen edges
+    // Wrap around screen edges (position stays in [0, canvas] for collision/UI)
     if (this.head.x < 0) this.head.x += config.canvasWidth;
     else if (this.head.x > config.canvasWidth) this.head.x -= config.canvasWidth;
     if (this.head.y < 0) this.head.y += config.canvasHeight;
@@ -76,7 +86,6 @@ export class Snake {
       const segmentDistance = this.getSegmentDistance(pathIndex) || 1;
       const ratio = Math.min(1, Math.max(0, (targetDistance - traveled) / segmentDistance));
 
-      // Handle wrap-around for smooth interpolation
       let dx = to.x - from.x;
       if (Math.abs(dx) > config.canvasWidth / 2) {
         dx = dx > 0 ? dx - config.canvasWidth : dx + config.canvasWidth;
@@ -89,12 +98,6 @@ export class Snake {
       segment.x = from.x + dx * ratio;
       segment.y = from.y + dy * ratio;
 
-      // Wrap segment position
-      if (segment.x < 0) segment.x += config.canvasWidth;
-      else if (segment.x > config.canvasWidth) segment.x -= config.canvasWidth;
-      if (segment.y < 0) segment.y += config.canvasHeight;
-      else if (segment.y > config.canvasHeight) segment.y -= config.canvasHeight;
-
       segment.radius = config.headRadius * Math.pow(config.radiusFalloff, index);
     }
   }
@@ -105,15 +108,23 @@ export class Snake {
     if (!current || !next) {
       return 0;
     }
-    const dx = next.x - current.x;
-    const dy = next.y - current.y;
+    const w = this.config.canvasWidth;
+    const h = this.config.canvasHeight;
+    const dx = shortestTorusDelta(next.x - current.x, w);
+    const dy = shortestTorusDelta(next.y - current.y, h);
     return Math.hypot(dx, dy);
   }
 
   addPathPoint(point) {
+    const config = this.config;
+    const w = config.canvasWidth;
+    const h = config.canvasHeight;
     const last = this.path[0];
-    const dx = point.x - last.x;
-    const dy = point.y - last.y;
+    let dx = point.x - last.x;
+    let dy = point.y - last.y;
+    dx = shortestTorusDelta(dx, w);
+    dy = shortestTorusDelta(dy, h);
+
     const distance = Math.hypot(dx, dy);
     if (distance < 0.1) {
       return;
