@@ -56,7 +56,7 @@ function drawSnakeSegmentsToroidal(ctx, snake, canvasWidth, canvasHeight) {
   });
 }
 
-export function renderFrame(ctx, config, snake, particles, collectibles) {
+export function renderFrame(ctx, config, snake, particles, collectibles, hazards) {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   ctx.fillStyle = config.backgroundColor;
   ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
@@ -65,6 +65,10 @@ export function renderFrame(ctx, config, snake, particles, collectibles) {
   ctx.filter = 'blur(0.8px)';
   drawCollectibles(ctx, config, collectibles);
   ctx.restore();
+
+  if (hazards) {
+    hazards.drawBackdrop(ctx);
+  }
 
   ctx.filter = 'blur(1.2px)';
   ctx.fillStyle = config.snakeColor;
@@ -75,5 +79,9 @@ export function renderFrame(ctx, config, snake, particles, collectibles) {
 
   if (particles) {
     particles.draw(ctx);
+  }
+
+  if (hazards) {
+    hazards.drawEmbers(ctx);
   }
 }

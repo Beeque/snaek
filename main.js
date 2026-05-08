@@ -4,6 +4,7 @@ import { Snake } from './snake.js';
 import { ParticleSystem } from './particles.js';
 import { renderFrame } from './render.js';
 import { Collectibles } from './collectibles.js';
+import { HazardWaveSystem } from './hazards.js';
 import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
@@ -13,7 +14,9 @@ const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
 const collectibles = new Collectibles(GAME_CONFIG);
+const hazards = new HazardWaveSystem(GAME_CONFIG);
 let currentEnergy = GAME_CONFIG.maxEnergy;
+let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
 /** Boost pysyy vain jos nuolta pidetään ja energiaa tarpeeksi; uusi painallus kun energia loppui tai jäi alle kynnyksen. */
 let boostEngaged = false;
@@ -31,7 +34,7 @@ function animate(timestamp) {
 
   input.update(delta);
   
-  if (!input.isPaused()) {
+  if (!input.isPaused() && currentHealth > 0) {
     const maxE = GAME_CONFIG.maxEnergy;
     const energyFrac = currentEnergy / maxE;
     const energyEnoughForBoost = currentEnergy > 0 && energyFrac >= GAME_CONFIG.boostMinEnergyFraction;
@@ -66,6 +69,9 @@ function animate(timestamp) {
       currentEnergy = Math.min(GAME_CONFIG.maxEnergy, currentEnergy + pickup.energyGained);
     }
 
+    const hazardDamage = hazards.update(delta, snake);
+    currentHealth = Math.max(0, currentHealth - hazardDamage);
+
     particles.emitFromPickupOrbs(collectibles, GAME_CONFIG, delta);
 
     snake.segments.forEach((segment, index) => {
@@ -86,10 +92,11 @@ function animate(timestamp) {
   
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles);
+  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards);
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
-  updateHealthBar(100);
+  const healthPercent = (currentHealth / GAME_CONFIG.maxHealth) * 100;
+  updateHealthBar(healthPercent);
   updateEnergyBar(energyPercent);
   updateScoreDisplay(score);
 
