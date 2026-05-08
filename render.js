@@ -165,6 +165,7 @@ export function renderFrame(
     asteroidField.draw(ctx);
     ctx.restore();
   }
+  ctx.restore();
 
   ctx.filter = 'blur(1.2px)';
   ctx.fillStyle = config.snakeColor;
@@ -180,5 +181,4 @@ export function renderFrame(
   if (floatingTexts) {
     floatingTexts.draw(ctx);
   }
-  ctx.restore();
 }
