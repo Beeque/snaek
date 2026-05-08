@@ -46,18 +46,18 @@ export const GAME_CONFIG = {
   hazardWarningSeconds: 1,
   hazardWarningSparkCount: 48,
   hazardSweepSpeed: 540,
-  hazardWaveThickness: 52,
+  hazardWaveThickness: 34,
   hazardWaveDamage: 20,
   hazardWaveHitCooldown: 0.35,
   hazardEmberDamage: 1,
   hazardEmberHitCooldown: 0.5,
   /** Partikkeleita / s (pidä maltillisena; canvas-shadow + massapiirto on kallista). */
-  hazardCrestSpawnRate: 130,
-  hazardTrailSpawnRate: 85,
+  hazardCrestSpawnRate: 210,
+  hazardTrailSpawnRate: 140,
   /** Turva: spawn-laskenta ei käytä dt:tä isompaa kuin tämä → ei spikeja välilehdellä. */
   hazardSpawnDtCap: 0.022,
   /** Enimmäismäärä elossa kerrallaan (vanhimmat poistetaan). */
-  hazardFireParticleMax: 380,
+  hazardFireParticleMax: 620,
   /** Afterburn liikkuu tähän suhteeseen rintaman nopeudesta (0–1). */
   hazardTrailSpeedRatio: 0.78,
   hazardCrestLifeMin: 0.18,
@@ -66,8 +66,8 @@ export const GAME_CONFIG = {
   hazardTrailLifeMax: 2.1,
   hazardCrestRadiusMin: 2.2,
   hazardCrestRadiusMax: 5.2,
-  hazardTrailRadiusMin: 2.8,
-  hazardTrailRadiusMax: 6.2,
+  hazardTrailRadiusMin: 1.6,
+  hazardTrailRadiusMax: 3.6,
   hazardParticleDrag: 1.15,
   /** 0 = ei shadowBluria (iso FPS-voitto). */
   hazardParticleShadowBlur: 0,
@@ -80,6 +80,7 @@ export const GAME_CONFIG = {
   asteroidSpawnBatchMax: 2,
   asteroidMaxAlive: 7,
   asteroidEdgeMargin: 36,
+  asteroidSpawnMinDistFromHead: 170,
   asteroidDriftSpeedMin: 22,
   asteroidDriftSpeedMax: 48,
   asteroidSpinMax: 0.65,
@@ -95,6 +96,8 @@ export const GAME_CONFIG = {
   asteroidCollisionSegments: 10,
   /** Lisäsäde törmäykseen (pidä pienenä). */
   asteroidCollisionPad: 0,
+  /** Tätä pienemmät asteroidiblobit ovat vain visuaalisia (ei törmäystä). */
+  asteroidCollisionBlobRadiusMin: 12,
   /** Blob-säteen kerroin törmäyksessä (< 1 = tiukempi kuin piirretty möykky). */
   asteroidBlobHitRadiusMul: 0.78,
   /** Soraa jäljessä (ParticleSystem); ei vauriota matolle. */

@@ -68,39 +68,56 @@ export class AsteroidField {
     this._debrisCarry = 0;
   }
 
-  spawnRock() {
+  spawnRock(snake = null) {
     const c = this.config;
     const w = c.canvasWidth;
     const h = c.canvasHeight;
     const m = c.asteroidEdgeMargin;
-    const side = Math.floor(Math.random() * 4);
-    let x = 0;
-    let y = 0;
+    const minDistFromHead = c.asteroidSpawnMinDistFromHead ?? 0;
+    const head = snake?.segments?.[0];
+    const hasHeadConstraint = !!head && minDistFromHead > 0;
+    const headX = hasHeadConstraint ? wrapCanvasCoord(head.x, w) : 0;
+    const headY = hasHeadConstraint ? wrapCanvasCoord(head.y, h) : 0;
+    let x = w * 0.5;
+    let y = h * 0.5;
     let vx = 0;
     let vy = 0;
-    const speed = randRange(c.asteroidDriftSpeedMin, c.asteroidDriftSpeedMax);
-    const jitter = randRange(-22, 22);
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      const side = Math.floor(Math.random() * 4);
+      const speed = randRange(c.asteroidDriftSpeedMin, c.asteroidDriftSpeedMax);
+      const jitter = randRange(-22, 22);
 
-    if (side === 0) {
-      x = randRange(m, w - m);
-      y = -m - randRange(20, 80);
-      vx = jitter * 0.35;
-      vy = speed;
-    } else if (side === 1) {
-      x = randRange(m, w - m);
-      y = h + m + randRange(20, 80);
-      vx = jitter * 0.35;
-      vy = -speed;
-    } else if (side === 2) {
-      x = -m - randRange(20, 80);
-      y = randRange(m, h - m);
-      vx = speed;
-      vy = jitter * 0.35;
-    } else {
-      x = w + m + randRange(20, 80);
-      y = randRange(m, h - m);
-      vx = -speed;
-      vy = jitter * 0.35;
+      if (side === 0) {
+        x = randRange(m, w - m);
+        y = -m - randRange(20, 80);
+        vx = jitter * 0.35;
+        vy = speed;
+      } else if (side === 1) {
+        x = randRange(m, w - m);
+        y = h + m + randRange(20, 80);
+        vx = jitter * 0.35;
+        vy = -speed;
+      } else if (side === 2) {
+        x = -m - randRange(20, 80);
+        y = randRange(m, h - m);
+        vx = speed;
+        vy = jitter * 0.35;
+      } else {
+        x = w + m + randRange(20, 80);
+        y = randRange(m, h - m);
+        vx = -speed;
+        vy = jitter * 0.35;
+      }
+
+      if (!hasHeadConstraint) {
+        break;
+      }
+
+      const spawnX = wrapCanvasCoord(x, w);
+      const spawnY = wrapCanvasCoord(y, h);
+      if (torusDistanceSq(headX, headY, spawnX, spawnY, w, h) >= minDistFromHead * minDistFromHead) {
+        break;
+      }
     }
 
     const n = Math.round(randRange(c.asteroidVertMin, c.asteroidVertMax));
@@ -132,7 +149,7 @@ export class AsteroidField {
     if (this.spawnTimer <= 0 && this.rocks.length < c.asteroidMaxAlive) {
       const batch = Math.round(randRange(c.asteroidSpawnBatchMin, c.asteroidSpawnBatchMax));
       for (let b = 0; b < batch && this.rocks.length < c.asteroidMaxAlive; b += 1) {
-        this.spawnRock();
+        this.spawnRock(snake);
       }
       this.spawnTimer = randRange(c.asteroidSpawnIntervalMin, c.asteroidSpawnIntervalMax);
     }
@@ -152,27 +169,20 @@ export class AsteroidField {
       }
 
       if (this.hitCooldown <= 0) {
-        const ca = Math.cos(rock.angle);
-        const sa = Math.sin(rock.angle);
         const pad = c.asteroidCollisionPad ?? 0;
         const slack = c.pickupOverlapSlack ?? 1;
-        const mul = c.asteroidBlobHitRadiusMul ?? 0.78;
+        const coreMul = c.asteroidCoreHitRadiusMul ?? 0.52;
+        const coreHitR = rock.hitRadius * coreMul;
 
         let struck = false;
         for (let s = 0; s < maxSeg && !struck; s += 1) {
           const seg = snake.segments[s];
-          for (let bi = 0; bi < rock.blobs.length; bi += 1) {
-            const b = rock.blobs[bi];
-            const bx = rock.x + ca * b.dx - sa * b.dy;
-            const by = rock.y + sa * b.dx + ca * b.dy;
-            const hitR = seg.radius + b.r * mul + pad - slack;
-            const maxD2 = hitR * hitR;
-            const sx = wrapCanvasCoord(seg.x, w);
-            const sy = wrapCanvasCoord(seg.y, h);
-            if (torusDistanceSq(sx, sy, bx, by, w, h) < maxD2) {
-              struck = true;
-              break;
-            }
+          const hitR = seg.radius + coreHitR + pad - slack;
+          const maxD2 = hitR * hitR;
+          const sx = wrapCanvasCoord(seg.x, w);
+          const sy = wrapCanvasCoord(seg.y, h);
+          if (torusDistanceSq(sx, sy, rock.x, rock.y, w, h) < maxD2) {
+            struck = true;
           }
         }
         if (struck) {

@@ -185,8 +185,9 @@ export class Collectibles {
         healthGained += config.greenHealthRestore;
       }
 
-      this.orb = null;
-      this.spawnIn = randomSpawnDelay(config);
+      this.orb = this.createOrb(this.pickRandomType());
+      this.placeOrb(this.orb, snake);
+      this.orb.timeLeft = lifeTotal;
     }
 
     return { scoreGained, energyGained, healthGained, ateBlack, ateYellow, ateGreen };
