@@ -24,7 +24,9 @@ export const GAME_CONFIG = {
   pickupRespawnDelayMin: 2,
   pickupRespawnDelayMax: 4.8,
   pickupInitialSpawnDelay: 0.5,
-  pickupYellowChance: 0.38,
+  /** Spawn-suhteet musta : keltainen (esim. 10 ja 1 → ~91 % mustia). */
+  pickupSpawnWeightBlack: 10,
+  pickupSpawnWeightYellow: 1,
   pickupBlackRadius: 11,
   pickupYellowRadius: 10,
   pickupSpawnMargin: 48,

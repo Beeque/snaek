@@ -38,7 +38,10 @@ export class Collectibles {
   }
 
   pickRandomType() {
-    return Math.random() < this.config.pickupYellowChance ? 'yellow' : 'black';
+    const b = this.config.pickupSpawnWeightBlack;
+    const y = this.config.pickupSpawnWeightYellow;
+    const sum = b + y;
+    return Math.random() * sum < b ? 'black' : 'yellow';
   }
 
   getActiveOrbs() {
