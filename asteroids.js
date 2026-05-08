@@ -162,6 +162,14 @@ export class AsteroidField {
       rock.x += rock.vx * dt;
       rock.y += rock.vy * dt;
       rock.angle += rock.spin * dt;
+      // Keep asteroid coordinates near the visible torus space so
+      // collision and rendering always refer to the same visible copy.
+      if (rock.x < -w || rock.x > w * 2) {
+        rock.x = wrapCanvasCoord(rock.x, w);
+      }
+      if (rock.y < -h || rock.y > h * 2) {
+        rock.y = wrapCanvasCoord(rock.y, h);
+      }
 
       if (rock.life <= 0) {
         this.rocks.splice(r, 1);
