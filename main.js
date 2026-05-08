@@ -23,6 +23,8 @@ const floatingTexts = new FloatingTexts();
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
+let mobileRotateReferenceAngle = snake.head.baseAngle;
+let wasMotionEnabled = false;
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -36,6 +38,11 @@ function animate(timestamp) {
   lastTimestamp = timestamp;
 
   input.update(delta);
+  const motionWorldRotate = input.isMotionEnabled();
+  if (motionWorldRotate && !wasMotionEnabled) {
+    mobileRotateReferenceAngle = snake.head.baseAngle;
+  }
+  wasMotionEnabled = motionWorldRotate;
   
   if (!input.isPaused() && currentHealth > 0) {
     const maxE = GAME_CONFIG.maxEnergy;
@@ -57,9 +64,8 @@ function animate(timestamp) {
     }
     
     const steerInput = input.getSteer();
-    const motionWorldRotate = input.isMotionEnabled();
     snake.setSpeed(effectiveSpeed);
-    snake.update(delta, motionWorldRotate ? 0 : steerInput);
+    snake.update(delta, steerInput);
 
     const blackOrbScoreEnergy = boostActive ? currentEnergy : null;
     const pickup = collectibles.updateAndCollect(delta, snake, blackOrbScoreEnergy);
@@ -118,8 +124,14 @@ function animate(timestamp) {
   floatingTexts.update(delta);
   particles.update(delta);
   
-  const rotateMaxRad = (GAME_CONFIG.mobileWorldRotateMaxDeg * Math.PI) / 180;
-  const worldRotation = input.isMotionEnabled() ? -input.getSteer() * rotateMaxRad : 0;
+  let worldRotation = 0;
+  if (motionWorldRotate) {
+    worldRotation = -(snake.head.baseAngle - mobileRotateReferenceAngle);
+    const rotateMaxRad = ((GAME_CONFIG.mobileWorldRotateMaxDeg ?? 0) * Math.PI) / 180;
+    if (rotateMaxRad > 0) {
+      worldRotation = Math.max(-rotateMaxRad, Math.min(rotateMaxRad, worldRotation));
+    }
+  }
   renderFrame(
     ctx,
     GAME_CONFIG,
