@@ -1,6 +1,7 @@
 export const GAME_CONFIG = {
-  canvasWidth: 960,
-  canvasHeight: 640,
+  /** Neliskulmainen pelialue (canvas + torus-geometria). */
+  canvasWidth: 720,
+  canvasHeight: 720,
   /** Pelikenttä hieman tummempi kuin sivun `--bg-color` (styles.css). */
   backgroundColor: '#6c7078',
   snakeColor: '#000000',
