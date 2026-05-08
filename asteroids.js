@@ -64,6 +64,8 @@ export class AsteroidField {
     this.rocks = [];
     this.spawnTimer = randRange(config.asteroidSpawnIntervalMin, config.asteroidSpawnIntervalMax);
     this.hitCooldown = 0;
+    /** Emit-taajuuden carry (asteroidDebrisEmitRate). */
+    this._debrisCarry = 0;
   }
 
   spawnRock() {
@@ -170,6 +172,55 @@ export class AsteroidField {
     }
 
     return { damage, popup };
+  }
+
+  /**
+   * Pieniä mustia sorapartikkeleita asteroidin pintaan ja liike-suuntaan suhteessa.
+   * Pelkkä visuaali — ParticleSystem ei osu matoon (ei törmäyslogiikkaa).
+   */
+  emitDebrisParticles(particleSystem, dt) {
+    if (!particleSystem || this.rocks.length === 0) {
+      return;
+    }
+    const c = this.config;
+    const rate = c.asteroidDebrisEmitRate;
+    this._debrisCarry += rate * dt;
+    const w = c.canvasWidth;
+    const h = c.canvasHeight;
+    const shades = ['#030303', '#060606', '#0a0a0a', '#0f0f0f'];
+
+    while (this._debrisCarry >= 1) {
+      this._debrisCarry -= 1;
+      const rock = this.rocks[Math.floor(Math.random() * this.rocks.length)];
+      const b = rock.blobs[Math.floor(Math.random() * rock.blobs.length)];
+      const tang = Math.random() * Math.PI * 2;
+      const jr = randRange(0.35, 1.08) * b.r;
+      const ljx = b.dx + Math.cos(tang) * jr;
+      const ljy = b.dy + Math.sin(tang) * jr;
+      const ca = Math.cos(rock.angle);
+      const sa = Math.sin(rock.angle);
+      const wx = rock.x + ca * ljx - sa * ljy;
+      const wy = rock.y + sa * ljx + ca * ljy;
+
+      const spd = Math.hypot(rock.vx, rock.vy);
+      let vx;
+      let vy;
+      if (spd > 6) {
+        vx = (-rock.vx / spd) * randRange(14, 44) + randRange(-30, 30);
+        vy = (-rock.vy / spd) * randRange(14, 44) + randRange(-30, 30);
+      } else {
+        const a = Math.random() * Math.PI * 2;
+        vx = Math.cos(a) * randRange(12, 34);
+        vy = Math.sin(a) * randRange(12, 34);
+      }
+
+      const life = randRange(c.asteroidDebrisLifeMin, c.asteroidDebrisLifeMax);
+      const radius = randRange(c.asteroidDebrisRadiusMin, c.asteroidDebrisRadiusMax);
+      const color = shades[Math.floor(Math.random() * shades.length)];
+      const px = wrapCanvasCoord(wx, w);
+      const py = wrapCanvasCoord(wy, h);
+      particleSystem.emit(px, py, vx, vy, life, radius, color, c.asteroidDebrisGravity, 'asteroidDebris');
+    }
   }
 
   draw(ctx) {

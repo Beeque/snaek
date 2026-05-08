@@ -105,6 +105,8 @@ export class ParticleSystem {
       let finalAlpha = alpha * 0.6;
       if (p.kind === 'pickup') {
         finalAlpha = alpha * 0.88;
+      } else if (p.kind === 'asteroidDebris') {
+        finalAlpha = alpha * 0.5;
       } else if (p.color === '#FFD700') {
         // Vilkkuminen sin-funktion avulla
         const twinkleFactor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 100));

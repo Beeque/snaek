@@ -100,6 +100,8 @@ function animate(timestamp) {
       floatingTexts.add(snake.head.x, snake.head.y - 26, `-${GAME_CONFIG.asteroidDamage}`, '#882222', 0.85);
     }
 
+    asteroidField.emitDebrisParticles(particles, delta);
+
     particles.emitFromPickupOrbs(collectibles, GAME_CONFIG, delta);
 
     snake.segments.forEach((segment, index) => {

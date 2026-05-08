@@ -93,6 +93,13 @@ export const GAME_CONFIG = {
   asteroidHitCooldown: 0.42,
   asteroidCollisionSegments: 10,
   asteroidCollisionPad: 2,
+  /** Soraa jäljessä (ParticleSystem); ei vauriota matolle. */
+  asteroidDebrisEmitRate: 17,
+  asteroidDebrisLifeMin: 0.32,
+  asteroidDebrisLifeMax: 0.85,
+  asteroidDebrisRadiusMin: 1.3,
+  asteroidDebrisRadiusMax: 3.4,
+  asteroidDebrisGravity: 24,
 
   orbFloatAmplitudeY: 18,
   orbFloatAmplitudeX: 6,
