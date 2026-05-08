@@ -56,8 +56,10 @@ function animate(timestamp) {
       currentEnergy = Math.min(maxE, currentEnergy);
     }
     
+    const steerInput = input.getSteer();
+    const motionWorldRotate = input.isMotionEnabled();
     snake.setSpeed(effectiveSpeed);
-    snake.update(delta, input.getSteer());
+    snake.update(delta, motionWorldRotate ? 0 : steerInput);
 
     const blackOrbScoreEnergy = boostActive ? currentEnergy : null;
     const pickup = collectibles.updateAndCollect(delta, snake, blackOrbScoreEnergy);
@@ -116,7 +118,20 @@ function animate(timestamp) {
   floatingTexts.update(delta);
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, asteroidField, floatingTexts, timestamp / 1000);
+  const rotateMaxRad = (GAME_CONFIG.mobileWorldRotateMaxDeg * Math.PI) / 180;
+  const worldRotation = input.isMotionEnabled() ? -input.getSteer() * rotateMaxRad : 0;
+  renderFrame(
+    ctx,
+    GAME_CONFIG,
+    snake,
+    particles,
+    collectibles,
+    hazards,
+    asteroidField,
+    floatingTexts,
+    timestamp / 1000,
+    worldRotation
+  );
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
   const healthPercent = (currentHealth / GAME_CONFIG.maxHealth) * 100;

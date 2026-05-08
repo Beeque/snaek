@@ -125,12 +125,29 @@ function drawSnakeSegmentsToroidal(ctx, snake, canvasWidth, canvasHeight) {
   });
 }
 
-export function renderFrame(ctx, config, snake, particles, collectibles, hazards, asteroidField, floatingTexts, timeSec = 0) {
+export function renderFrame(
+  ctx,
+  config,
+  snake,
+  particles,
+  collectibles,
+  hazards,
+  asteroidField,
+  floatingTexts,
+  timeSec = 0,
+  worldRotation = 0
+) {
   const cw = ctx.canvas.width;
   const ch = ctx.canvas.height;
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = config.backgroundColor;
   ctx.fillRect(0, 0, cw, ch);
+  ctx.save();
+  if (worldRotation !== 0) {
+    ctx.translate(cw * 0.5, ch * 0.5);
+    ctx.rotate(worldRotation);
+    ctx.translate(-cw * 0.5, -ch * 0.5);
+  }
   drawPlayfieldPlasma(ctx, cw, ch, timeSec);
 
   ctx.save();
@@ -163,4 +180,5 @@ export function renderFrame(ctx, config, snake, particles, collectibles, hazards
   if (floatingTexts) {
     floatingTexts.draw(ctx);
   }
+  ctx.restore();
 }

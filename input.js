@@ -89,6 +89,10 @@ export class InputManager {
     return this.motionSupported;
   }
 
+  isMotionEnabled() {
+    return this.motionEnabled;
+  }
+
   needsMotionGesture() {
     return typeof window.DeviceOrientationEvent?.requestPermission === 'function';
   }

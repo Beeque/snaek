@@ -18,6 +18,7 @@ export const GAME_CONFIG = {
   turnAcceleration: 2600,
   maxTurnSpeed: 320,
   turnDrag: 2,
+  mobileWorldRotateMaxDeg: 42,
   waveAmplitude: 15,
   waveFrequency: 1.2,
   maxEnergy: 100,
