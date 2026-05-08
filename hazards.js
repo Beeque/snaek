@@ -1,14 +1,9 @@
 import { wrapCanvasCoord } from './snake.js';
 
-function torusDelta(dx, dy, w, h) {
-  return {
-    dx: dx - Math.round(dx / w) * w,
-    dy: dy - Math.round(dy / h) * h
-  };
-}
-
-function torusDistanceSq(ax, ay, bx, by, w, h) {
-  const { dx, dy } = torusDelta(bx - ax, by - ay, w, h);
+/** Euclidean distance² (hazard fire lives in linear canvas space, not wrapped like the snake torus). */
+function planarDistSq(ax, ay, bx, by) {
+  const dx = bx - ax;
+  const dy = by - ay;
   return dx * dx + dy * dy;
 }
 
@@ -290,8 +285,6 @@ export class HazardWaveSystem {
 
   applyTrailDamage(snake) {
     const c = this.config;
-    const w = c.canvasWidth;
-    const h = c.canvasHeight;
     if (this.emberHitCd > 0) {
       return { dmg: 0, popup: false };
     }
@@ -299,15 +292,13 @@ export class HazardWaveSystem {
     if (!headSeg) {
       return { dmg: 0, popup: false };
     }
-    const sx = wrapCanvasCoord(headSeg.x, w);
-    const sy = wrapCanvasCoord(headSeg.y, h);
     for (let e = 0; e < this.fireParticles.length; e += 1) {
       const em = this.fireParticles[e];
       if (em.life <= 0 || em.kind !== 'trail') continue;
       const hitR = em.r + (c.hazardTrailCollisionPad ?? 0);
       const maxD = headSeg.radius + hitR - 1;
       const maxD2 = maxD * maxD;
-      if (torusDistanceSq(sx, sy, em.x, em.y, w, h) < maxD2) {
+      if (planarDistSq(headSeg.x, headSeg.y, em.x, em.y) < maxD2) {
         this.emberHitCd = c.hazardEmberHitCooldown;
         return { dmg: c.hazardEmberDamage, popup: true };
       }
@@ -330,8 +321,6 @@ export class HazardWaveSystem {
       p.y += p.vy * dt;
       p.vx *= 1 - drag * dt;
       p.vy *= 1 - drag * dt;
-      p.x = wrapCanvasCoord(p.x, c.canvasWidth);
-      p.y = wrapCanvasCoord(p.y, c.canvasHeight);
       arr[wIdx] = p;
       wIdx += 1;
     }
