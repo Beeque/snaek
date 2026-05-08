@@ -8,6 +8,12 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
+if command -v git >/dev/null 2>&1; then
+  echo "Updating from origin/dev..."
+  git pull origin dev
+  echo
+fi
+
 echo "Starting Snaek server on port ${PORT}..."
 if [[ -n "${CODESPACE_NAME:-}" ]]; then
   echo "Open: https://${CODESPACE_NAME}-${PORT}.app.github.dev"
