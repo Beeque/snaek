@@ -134,20 +134,13 @@ export function renderFrame(
   hazards,
   asteroidField,
   floatingTexts,
-  timeSec = 0,
-  worldRotation = 0
+  timeSec = 0
 ) {
   const cw = ctx.canvas.width;
   const ch = ctx.canvas.height;
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = config.backgroundColor;
   ctx.fillRect(0, 0, cw, ch);
-  ctx.save();
-  if (worldRotation !== 0) {
-    ctx.translate(cw * 0.5, ch * 0.5);
-    ctx.rotate(worldRotation);
-    ctx.translate(-cw * 0.5, -ch * 0.5);
-  }
   drawPlayfieldPlasma(ctx, cw, ch, timeSec);
 
   ctx.save();
@@ -180,5 +173,4 @@ export function renderFrame(
   if (floatingTexts) {
     floatingTexts.draw(ctx);
   }
-  ctx.restore();
 }

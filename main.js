@@ -11,7 +11,7 @@ import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
-const motionEnableBtn = document.getElementById('motion-enable-btn');
+const mobileNotice = document.getElementById('mobile-notice');
 
 const input = new InputManager();
 const snake = new Snake(GAME_CONFIG);
@@ -23,16 +23,6 @@ const floatingTexts = new FloatingTexts();
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
-let mobileRotateReferenceAngle = snake.head.baseAngle;
-let wasMotionEnabled = false;
-let displayedWorldRotation = 0;
-
-function shortestAngleDelta(target, current) {
-  let d = target - current;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return d;
-}
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -46,13 +36,7 @@ function animate(timestamp) {
   lastTimestamp = timestamp;
 
   input.update(delta);
-  const motionWorldRotate = input.isMotionEnabled();
-  if (motionWorldRotate && !wasMotionEnabled) {
-    mobileRotateReferenceAngle = snake.head.baseAngle;
-    displayedWorldRotation = 0;
-  }
-  wasMotionEnabled = motionWorldRotate;
-  let steerInput = input.getSteer();
+  const steerInput = input.getSteer();
   
   if (!input.isPaused() && currentHealth > 0) {
     const maxE = GAME_CONFIG.maxEnergy;
@@ -132,18 +116,7 @@ function animate(timestamp) {
   
   floatingTexts.update(delta);
   particles.update(delta);
-  
-  let targetWorldRotation = 0;
-  if (motionWorldRotate) {
-    targetWorldRotation = -(snake.head.baseAngle - mobileRotateReferenceAngle);
-    const rotateMaxRad = ((GAME_CONFIG.mobileWorldRotateMaxDeg ?? 0) * Math.PI) / 180;
-    if (rotateMaxRad > 0) {
-      targetWorldRotation = Math.max(-rotateMaxRad, Math.min(rotateMaxRad, targetWorldRotation));
-    }
-  }
-  const rotateResponse = Math.max(0.1, GAME_CONFIG.mobileWorldRotateResponse ?? 2.4);
-  const follow = 1 - Math.exp(-rotateResponse * delta);
-  displayedWorldRotation += shortestAngleDelta(targetWorldRotation, displayedWorldRotation) * follow;
+
   renderFrame(
     ctx,
     GAME_CONFIG,
@@ -153,8 +126,7 @@ function animate(timestamp) {
     hazards,
     asteroidField,
     floatingTexts,
-    timestamp / 1000,
-    displayedWorldRotation
+    timestamp / 1000
   );
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
@@ -168,24 +140,13 @@ function animate(timestamp) {
 
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('load', () => {
-  resizeCanvas();
-  if (input.isMotionAvailable()) {
-    if (input.needsMotionGesture()) {
-      if (motionEnableBtn) {
-        motionEnableBtn.hidden = false;
-        motionEnableBtn.addEventListener('click', async () => {
-          const ok = await input.enableMotionControls();
-          if (ok) {
-            motionEnableBtn.hidden = true;
-          }
-        });
-      }
-    } else {
-      input.enableMotionControls();
-      if (motionEnableBtn) {
-        motionEnableBtn.hidden = true;
-      }
+  const isMobile = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 900;
+  if (isMobile) {
+    if (mobileNotice) {
+      mobileNotice.hidden = false;
     }
+    return;
   }
+  resizeCanvas();
   requestAnimationFrame(animate);
 });
