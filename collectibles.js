@@ -22,11 +22,9 @@ export class Collectibles {
   constructor(config) {
     this.config = config;
     this.time = 0;
-    /** Enintään yksi musta ja yksi keltainen kerrallaan; ajastimet hallitsevat spawnin. */
-    this.slots = [
-      { type: 'black', orb: null, spawnIn: config.pickupBlackInitialDelay },
-      { type: 'yellow', orb: null, spawnIn: config.pickupYellowInitialDelay }
-    ];
+    /** Yksi pallo kerrallaan: musta tai keltainen. */
+    this.orb = null;
+    this.spawnIn = config.pickupInitialSpawnDelay;
   }
 
   createOrb(type) {
@@ -39,18 +37,22 @@ export class Collectibles {
     };
   }
 
-  getActiveOrbs() {
-    return this.slots.map((s) => s.orb).filter(Boolean);
+  pickRandomType() {
+    return Math.random() < this.config.pickupYellowChance ? 'yellow' : 'black';
   }
 
-  placeOrb(orb, snake, otherOrbs) {
-    const pos = this.randomFreePosition(snake, otherOrbs);
+  getActiveOrbs() {
+    return this.orb ? [this.orb] : [];
+  }
+
+  placeOrb(orb, snake) {
+    const pos = this.randomFreePosition(snake);
     orb.baseX = pos.x;
     orb.baseY = pos.y;
     orb.phase = Math.random() * Math.PI * 2;
   }
 
-  randomFreePosition(snake, otherOrbs) {
+  randomFreePosition(snake) {
     const config = this.config;
     const w = config.canvasWidth;
     const h = config.canvasHeight;
@@ -70,16 +72,6 @@ export class Collectibles {
           break;
         }
       }
-      if (!ok) continue;
-      for (let o = 0; o < otherOrbs.length; o += 1) {
-        const ob = otherOrbs[o];
-        const ox = wrapCanvasCoord(ob.baseX, w);
-        const oy = wrapCanvasCoord(ob.baseY, h);
-        if (torusDistance(x, y, ox, oy, w, h) < minDist) {
-          ok = false;
-          break;
-        }
-      }
       if (ok) {
         return { x, y };
       }
@@ -87,7 +79,6 @@ export class Collectibles {
     return { x: w * 0.5, y: h * 0.5 };
   }
 
-  /** Pieni vaaka- ja pystyvärähdys (eri taajuudet → luonnollinen leijunta). */
   getOrbFloatOffset(orb) {
     const c = this.config;
     const t = this.time;
@@ -120,6 +111,11 @@ export class Collectibles {
     return orb.type === 'yellow' ? this.config.pickupYellowRadius : this.config.pickupBlackRadius;
   }
 
+  lifetimeSeconds() {
+    const v = this.config.pickupLifetimeSeconds;
+    return typeof v === 'number' && !Number.isNaN(v) ? v : 12;
+  }
+
   /**
    * @returns {{ scoreGained: number, energyGained: number }}
    */
@@ -136,36 +132,30 @@ export class Collectibles {
     const hx = snake.head.x;
     const hy = snake.head.y;
     const headR = snake.segments[0]?.radius ?? config.headRadius;
+    const lifeTotal = this.lifetimeSeconds();
 
-    for (let si = 0; si < this.slots.length; si += 1) {
-      const slot = this.slots[si];
-
-      if (!slot.orb) {
-        slot.spawnIn -= dt;
-        if (slot.spawnIn <= 0) {
-          const others = this.getActiveOrbs();
-          slot.orb = this.createOrb(slot.type);
-          this.placeOrb(slot.orb, snake, others);
-          slot.orb.timeLeft = config.pickupLifetimeSeconds;
-        }
-        continue;
+    if (!this.orb) {
+      this.spawnIn -= dt;
+      if (this.spawnIn <= 0) {
+        this.orb = this.createOrb(this.pickRandomType());
+        this.placeOrb(this.orb, snake);
+        this.orb.timeLeft = lifeTotal;
       }
+      return { scoreGained, energyGained };
+    }
 
-      slot.orb.timeLeft -= dt;
-      if (slot.orb.timeLeft <= 0) {
-        slot.orb = null;
-        slot.spawnIn = randomSpawnDelay(config);
-        continue;
-      }
+    this.orb.timeLeft -= dt;
+    if (this.orb.timeLeft <= 0) {
+      this.orb = null;
+      this.spawnIn = randomSpawnDelay(config);
+      return { scoreGained, energyGained };
+    }
 
-      const orb = slot.orb;
-      const { x: ox, y: oy } = this.getOrbCollisionXY(orb);
-      const r = this.orbRadius(orb);
-      const dist = torusDistance(hx, hy, ox, oy, w, h);
-      if (dist >= headR + r - config.pickupOverlapSlack) {
-        continue;
-      }
-
+    const orb = this.orb;
+    const { x: ox, y: oy } = this.getOrbCollisionXY(orb);
+    const r = this.orbRadius(orb);
+    const dist = torusDistance(hx, hy, ox, oy, w, h);
+    if (dist < headR + r - config.pickupOverlapSlack) {
       if (orb.type === 'black') {
         snake.grow(config.growSegmentsPerBlack);
         if (boostCountsForScore) {
@@ -175,8 +165,8 @@ export class Collectibles {
         energyGained += config.yellowEnergyRestore;
       }
 
-      slot.orb = null;
-      slot.spawnIn = randomSpawnDelay(config);
+      this.orb = null;
+      this.spawnIn = randomSpawnDelay(config);
     }
 
     return { scoreGained, energyGained };

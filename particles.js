@@ -3,9 +3,11 @@ import { wrapCanvasCoord } from './snake.js';
 export class ParticleSystem {
   constructor() {
     this.particles = [];
+    /** Vakaa emit-taajuus pickup-partikkeleille (ei pelkkää random * dt). */
+    this._pickupParticleCarry = 0;
   }
 
-  emit(x, y, vx, vy, life, radius, color = '#000000', grav = null) {
+  emit(x, y, vx, vy, life, radius, color = '#000000', grav = null, kind = null) {
     this.particles.push({
       x,
       y,
@@ -15,7 +17,8 @@ export class ParticleSystem {
       maxLife: life,
       radius,
       color,
-      grav
+      grav,
+      kind
     });
   }
 
@@ -35,25 +38,27 @@ export class ParticleSystem {
 
   emitFromPickupOrbs(collectibles, config, dt) {
     const orbs = collectibles.getActiveOrbs();
-    for (let i = 0; i < orbs.length; i += 1) {
-      const orb = orbs[i];
-      const rate = orb.type === 'yellow' ? config.orbParticleRateYellow : config.orbParticleRateBlack;
-      if (Math.random() >= rate * dt) {
-        continue;
-      }
+    if (orbs.length === 0) {
+      return;
+    }
+    const orb = orbs[0];
+    const rate = orb.type === 'yellow' ? config.orbParticleRateYellow : config.orbParticleRateBlack;
+    this._pickupParticleCarry += rate * dt;
+    while (this._pickupParticleCarry >= 1) {
+      this._pickupParticleCarry -= 1;
       const { x, y } = collectibles.getOrbCollisionXY(orb);
       const angle = Math.random() * Math.PI * 2;
-      const speed = 8 + Math.random() * 18;
+      const speed = 10 + Math.random() * 22;
       const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed - (orb.type === 'yellow' ? 12 : 6);
-      const life = 0.35 + Math.random() * 0.45;
+      const vy = Math.sin(angle) * speed - (orb.type === 'yellow' ? 14 : 8);
+      const life = 0.45 + Math.random() * 0.55;
       if (orb.type === 'yellow') {
-        const r = config.orbParticleRadiusYellow + Math.random() * 0.8;
-        this.emit(x, y, vx, vy, life, r, '#FFD700', 22);
+        const r = config.orbParticleRadiusYellow + Math.random() * 1;
+        this.emit(x, y, vx, vy, life, r, '#FFD700', 18, 'pickup');
       } else {
-        const r = config.orbParticleRadiusBlack + Math.random() * 0.6;
-        const shade = Math.random() > 0.5 ? '#353535' : '#252525';
-        this.emit(x, y, vx * 0.85, vy * 0.85, life, r, shade, 28);
+        const r = config.orbParticleRadiusBlack + Math.random() * 0.9;
+        const shade = Math.random() > 0.45 ? '#696969' : '#585858';
+        this.emit(x, y, vx * 0.9, vy * 0.9, life, r, shade, 24, 'pickup');
       }
     }
   }
@@ -88,7 +93,9 @@ export class ParticleSystem {
       const alpha = Math.max(0, p.life / p.maxLife);
       // Kultaisille partikkeleille vilkkumisefekti
       let finalAlpha = alpha * 0.6;
-      if (p.color === '#FFD700') {
+      if (p.kind === 'pickup') {
+        finalAlpha = alpha * 0.88;
+      } else if (p.color === '#FFD700') {
         // Vilkkuminen sin-funktion avulla
         const twinkleFactor = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(Date.now() / 100));
         finalAlpha = alpha * 0.8 * twinkleFactor;
