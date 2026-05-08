@@ -5,28 +5,31 @@ export function wrapCanvasCoord(value, extent) {
   return v;
 }
 
-/** Shortest difference on a torus (same extent as canvas width/height). */
+/** Shortest signed difference on a torus; works for deltas larger than one period. */
 export function shortestTorusDelta(delta, extent) {
-  if (delta > extent / 2) return delta - extent;
-  if (delta < -extent / 2) return delta + extent;
-  return delta;
+  return delta - Math.round(delta / extent) * extent;
 }
 
 export class Snake {
   constructor(config) {
     this.config = config;
+    const halfW = config.canvasWidth * 0.5;
+    const halfH = config.canvasHeight * 0.5;
     this.head = {
-      x: config.canvasWidth * 0.5,
-      y: config.canvasHeight * 0.5,
+      x: halfW,
+      y: halfH,
+      /** Continuous position for path + segments (not wrapped). */
+      worldX: halfW,
+      worldY: halfH,
       angle: -Math.PI / 2,
       baseAngle: -Math.PI / 2
     };
     this.speed = config.baseSpeed;
     this.turnVelocity = 0;
-    this.path = [{ x: this.head.x, y: this.head.y }];
+    this.path = [{ x: this.head.worldX, y: this.head.worldY }];
     this.segments = Array.from({ length: config.segmentCount }, (_, index) => ({
-      x: this.head.x,
-      y: this.head.y,
+      x: this.head.worldX,
+      y: this.head.worldY,
       radius: config.headRadius * Math.pow(config.radiusFalloff, index)
     }));
   }
@@ -47,16 +50,13 @@ export class Snake {
     const waveOffset = Math.sin(Date.now() / 1000 * config.waveFrequency * Math.PI * 2) * (config.waveAmplitude * (Math.PI / 180));
     this.head.angle = this.head.baseAngle + waveOffset;
 
-    this.head.x += Math.cos(this.head.angle) * this.speed * dt;
-    this.head.y += Math.sin(this.head.angle) * this.speed * dt;
+    this.head.worldX += Math.cos(this.head.angle) * this.speed * dt;
+    this.head.worldY += Math.sin(this.head.angle) * this.speed * dt;
 
-    // Wrap around screen edges (position stays in [0, canvas] for collision/UI)
-    if (this.head.x < 0) this.head.x += config.canvasWidth;
-    else if (this.head.x > config.canvasWidth) this.head.x -= config.canvasWidth;
-    if (this.head.y < 0) this.head.y += config.canvasHeight;
-    else if (this.head.y > config.canvasHeight) this.head.y -= config.canvasHeight;
+    this.head.x = wrapCanvasCoord(this.head.worldX, config.canvasWidth);
+    this.head.y = wrapCanvasCoord(this.head.worldY, config.canvasHeight);
 
-    this.addPathPoint({ x: this.head.x, y: this.head.y });
+    this.addPathPoint({ x: this.head.worldX, y: this.head.worldY });
     if (this.path.length > 800) {
       this.path.length = 800;
     }
@@ -86,14 +86,8 @@ export class Snake {
       const segmentDistance = this.getSegmentDistance(pathIndex) || 1;
       const ratio = Math.min(1, Math.max(0, (targetDistance - traveled) / segmentDistance));
 
-      let dx = to.x - from.x;
-      if (Math.abs(dx) > config.canvasWidth / 2) {
-        dx = dx > 0 ? dx - config.canvasWidth : dx + config.canvasWidth;
-      }
-      let dy = to.y - from.y;
-      if (Math.abs(dy) > config.canvasHeight / 2) {
-        dy = dy > 0 ? dy - config.canvasHeight : dy + config.canvasHeight;
-      }
+      let dx = shortestTorusDelta(to.x - from.x, config.canvasWidth);
+      let dy = shortestTorusDelta(to.y - from.y, config.canvasHeight);
 
       segment.x = from.x + dx * ratio;
       segment.y = from.y + dy * ratio;
@@ -122,6 +116,7 @@ export class Snake {
     const last = this.path[0];
     let dx = point.x - last.x;
     let dy = point.y - last.y;
+    // Safety if coordinates ever disagree (floating drift); normally dx/dy are tiny.
     dx = shortestTorusDelta(dx, w);
     dy = shortestTorusDelta(dy, h);
 
