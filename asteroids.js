@@ -193,11 +193,6 @@ export class AsteroidField {
           ctx.translate(cx, cy);
           ctx.rotate(rock.angle);
           const sorted = rock.blobs.slice().sort((a, z) => z.r - a.r);
-          let maxReach = 0;
-          for (let i = 0; i < sorted.length; i += 1) {
-            const b = sorted[i];
-            maxReach = Math.max(maxReach, Math.hypot(b.dx, b.dy) + b.r);
-          }
           for (let i = 0; i < sorted.length; i += 1) {
             const b = sorted[i];
             ctx.beginPath();
@@ -205,20 +200,6 @@ export class AsteroidField {
             ctx.fillStyle = b.fill;
             ctx.fill();
           }
-          ctx.strokeStyle = c.asteroidStrokeColor;
-          ctx.lineWidth = 1.25;
-          ctx.globalAlpha = 0.55;
-          for (let i = 0; i < sorted.length; i += 1) {
-            const b = sorted[i];
-            const reach = Math.hypot(b.dx, b.dy) + b.r;
-            if (reach < maxReach * 0.78) {
-              continue;
-            }
-            ctx.beginPath();
-            ctx.arc(b.dx, b.dy, b.r, 0, Math.PI * 2);
-            ctx.stroke();
-          }
-          ctx.globalAlpha = 1;
           ctx.restore();
         }
       }

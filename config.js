@@ -93,8 +93,6 @@ export const GAME_CONFIG = {
   asteroidHitCooldown: 0.42,
   asteroidCollisionSegments: 10,
   asteroidCollisionPad: 2,
-  asteroidFillColor: '#101010',
-  asteroidStrokeColor: '#3a3a3a',
 
   orbFloatAmplitudeY: 18,
   orbFloatAmplitudeX: 6,
