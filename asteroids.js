@@ -152,21 +152,33 @@ export class AsteroidField {
       }
 
       if (this.hitCooldown <= 0) {
-        const ox = rock.x;
-        const oy = rock.y;
-        const hitR = rock.hitRadius + (c.asteroidCollisionPad ?? 0);
-        for (let s = 0; s < maxSeg; s += 1) {
+        const ca = Math.cos(rock.angle);
+        const sa = Math.sin(rock.angle);
+        const pad = c.asteroidCollisionPad ?? 0;
+        const slack = c.pickupOverlapSlack ?? 1;
+        const mul = c.asteroidBlobHitRadiusMul ?? 0.78;
+
+        let struck = false;
+        for (let s = 0; s < maxSeg && !struck; s += 1) {
           const seg = snake.segments[s];
-          const sx = wrapCanvasCoord(seg.x, w);
-          const sy = wrapCanvasCoord(seg.y, h);
-          const maxD = seg.radius + hitR - (c.pickupOverlapSlack ?? 1);
-          const maxD2 = maxD * maxD;
-          if (torusDistanceSq(sx, sy, ox, oy, w, h) < maxD2) {
-            damage += c.asteroidDamage;
-            this.hitCooldown = c.asteroidHitCooldown;
-            popup = true;
-            break;
+          for (let bi = 0; bi < rock.blobs.length; bi += 1) {
+            const b = rock.blobs[bi];
+            const bx = rock.x + ca * b.dx - sa * b.dy;
+            const by = rock.y + sa * b.dx + ca * b.dy;
+            const hitR = seg.radius + b.r * mul + pad - slack;
+            const maxD2 = hitR * hitR;
+            const sx = wrapCanvasCoord(seg.x, w);
+            const sy = wrapCanvasCoord(seg.y, h);
+            if (torusDistanceSq(sx, sy, bx, by, w, h) < maxD2) {
+              struck = true;
+              break;
+            }
           }
+        }
+        if (struck) {
+          damage += c.asteroidDamage;
+          this.hitCooldown = c.asteroidHitCooldown;
+          popup = true;
         }
       }
     }

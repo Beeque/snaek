@@ -93,7 +93,10 @@ export const GAME_CONFIG = {
   asteroidDamage: 11,
   asteroidHitCooldown: 0.42,
   asteroidCollisionSegments: 10,
-  asteroidCollisionPad: 2,
+  /** Lisäsäde törmäykseen (pidä pienenä). */
+  asteroidCollisionPad: 0,
+  /** Blob-säteen kerroin törmäyksessä (< 1 = tiukempi kuin piirretty möykky). */
+  asteroidBlobHitRadiusMul: 0.78,
   /** Soraa jäljessä (ParticleSystem); ei vauriota matolle. */
   asteroidDebrisEmitRate: 17,
   asteroidDebrisLifeMin: 0.32,
