@@ -25,6 +25,14 @@ let currentHealth = GAME_CONFIG.maxHealth;
 let score = 0;
 let mobileRotateReferenceAngle = snake.head.baseAngle;
 let wasMotionEnabled = false;
+let displayedWorldRotation = 0;
+
+function shortestAngleDelta(target, current) {
+  let d = target - current;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return d;
+}
 
 function resizeCanvas() {
   canvas.width = GAME_CONFIG.canvasWidth;
@@ -41,6 +49,7 @@ function animate(timestamp) {
   const motionWorldRotate = input.isMotionEnabled();
   if (motionWorldRotate && !wasMotionEnabled) {
     mobileRotateReferenceAngle = snake.head.baseAngle;
+    displayedWorldRotation = 0;
   }
   wasMotionEnabled = motionWorldRotate;
   
@@ -124,14 +133,17 @@ function animate(timestamp) {
   floatingTexts.update(delta);
   particles.update(delta);
   
-  let worldRotation = 0;
+  let targetWorldRotation = 0;
   if (motionWorldRotate) {
-    worldRotation = -(snake.head.baseAngle - mobileRotateReferenceAngle);
+    targetWorldRotation = -(snake.head.baseAngle - mobileRotateReferenceAngle);
     const rotateMaxRad = ((GAME_CONFIG.mobileWorldRotateMaxDeg ?? 0) * Math.PI) / 180;
     if (rotateMaxRad > 0) {
-      worldRotation = Math.max(-rotateMaxRad, Math.min(rotateMaxRad, worldRotation));
+      targetWorldRotation = Math.max(-rotateMaxRad, Math.min(rotateMaxRad, targetWorldRotation));
     }
   }
+  const rotateResponse = Math.max(0.1, GAME_CONFIG.mobileWorldRotateResponse ?? 2.4);
+  const follow = 1 - Math.exp(-rotateResponse * delta);
+  displayedWorldRotation += shortestAngleDelta(targetWorldRotation, displayedWorldRotation) * follow;
   renderFrame(
     ctx,
     GAME_CONFIG,
@@ -142,7 +154,7 @@ function animate(timestamp) {
     asteroidField,
     floatingTexts,
     timestamp / 1000,
-    worldRotation
+    displayedWorldRotation
   );
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
