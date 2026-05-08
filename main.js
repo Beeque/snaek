@@ -5,6 +5,7 @@ import { ParticleSystem } from './particles.js';
 import { renderFrame } from './render.js';
 import { Collectibles } from './collectibles.js';
 import { HazardWaveSystem } from './hazards.js';
+import { AsteroidField } from './asteroids.js';
 import { FloatingTexts } from './floatingTexts.js';
 import { updateHealthBar, updateEnergyBar, updateScoreDisplay } from './ui.js';
 
@@ -16,6 +17,7 @@ const snake = new Snake(GAME_CONFIG);
 const particles = new ParticleSystem();
 const collectibles = new Collectibles(GAME_CONFIG);
 const hazards = new HazardWaveSystem(GAME_CONFIG);
+const asteroidField = new AsteroidField(GAME_CONFIG);
 const floatingTexts = new FloatingTexts();
 let currentEnergy = GAME_CONFIG.maxEnergy;
 let currentHealth = GAME_CONFIG.maxHealth;
@@ -92,6 +94,12 @@ function animate(timestamp) {
       floatingTexts.add(snake.head.x, snake.head.y - 20, `-${GAME_CONFIG.hazardEmberDamage}`, '#c42828', 0.75);
     }
 
+    const ast = asteroidField.update(delta, snake);
+    currentHealth = Math.max(0, currentHealth - ast.damage);
+    if (ast.popup) {
+      floatingTexts.add(snake.head.x, snake.head.y - 26, `-${GAME_CONFIG.asteroidDamage}`, '#882222', 0.85);
+    }
+
     particles.emitFromPickupOrbs(collectibles, GAME_CONFIG, delta);
 
     snake.segments.forEach((segment, index) => {
@@ -113,7 +121,7 @@ function animate(timestamp) {
   floatingTexts.update(delta);
   particles.update(delta);
   
-  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, floatingTexts);
+  renderFrame(ctx, GAME_CONFIG, snake, particles, collectibles, hazards, asteroidField, floatingTexts);
 
   const energyPercent = (currentEnergy / GAME_CONFIG.maxEnergy) * 100;
   const healthPercent = (currentHealth / GAME_CONFIG.maxHealth) * 100;
